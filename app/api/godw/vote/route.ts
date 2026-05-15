@@ -62,12 +62,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Hard-block frozen contestants — server-side, cannot be bypassed by any client
+    // Hard-block frozen contestants — server-side, cannot be bypassed by any client.
+    // Check expiry: if frozenUntil has passed, the freeze is lifted automatically.
     if (activeRound && activeRound.frozenContestantIds.includes(contestantId)) {
-      return NextResponse.json(
-        { error: 'contestant_frozen', message: 'This contestant has been disqualified from voting' },
-        { status: 403 }
-      )
+      const freeze = await prisma.godwFreeze.findUnique({
+        where: { contestantId_roundId: { contestantId, roundId: activeRound.id } },
+      })
+      if (freeze && freeze.frozenUntil > new Date()) {
+        return NextResponse.json(
+          { error: 'contestant_frozen', message: 'This contestant has been disqualified from voting' },
+          { status: 403 }
+        )
+      }
     }
 
     // ── Layer 2: Atomic Redis lock (IP) ─────────────────────────────────────

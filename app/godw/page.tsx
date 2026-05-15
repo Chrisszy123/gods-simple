@@ -204,8 +204,7 @@ interface GodwRowProps {
 
 function GodwRow({ contestant, totalGodwVotes, index, voteState, onVote, voteBadge }: GodwRowProps) {
   const pct = totalGodwVotes > 0 ? (contestant.godwVoteCount / totalGodwVotes) * 100 : 0
-  const isFrozen = voteState === 'frozen'
-  const isFirst = contestant.rank === 1 && !isFrozen
+  const isFirst = contestant.rank === 1
   const rankStyle = getRankStyle(contestant.rank)
   const avatarBorder = getAvatarBorder(contestant.rank)
   const barColor = getBarColor(contestant.rank)
@@ -223,34 +222,12 @@ function GodwRow({ contestant, totalGodwVotes, index, voteState, onVote, voteBad
       }}
       className="relative flex items-center gap-3 mb-2 px-4 py-3 rounded-xl"
       style={{
-        background: isFrozen
-          ? 'rgba(213,66,30,0.04)'
-          : isFirst
+        background: isFirst
           ? 'linear-gradient(135deg, rgba(254,191,83,0.07) 0%, rgba(254,191,83,0.03) 100%)'
           : 'rgba(255,255,255,0.025)',
-        border: `1px solid ${isFrozen ? 'rgba(213,66,30,0.18)' : isFirst ? 'rgba(254,191,83,0.22)' : 'rgba(255,255,255,0.06)'}`,
-        opacity: isFrozen ? 0.55 : 1,
-        filter: isFrozen ? 'grayscale(0.7)' : 'none',
+        border: `1px solid ${isFirst ? 'rgba(254,191,83,0.22)' : 'rgba(255,255,255,0.06)'}`,
       }}
     >
-      {isFrozen && (
-        <div
-          className="absolute top-2 right-16 z-10"
-          style={{
-            fontFamily: 'CogsAndBolts, Impact, sans-serif',
-            fontSize: 9,
-            letterSpacing: '0.15em',
-            color: 'rgba(213,66,30,0.8)',
-            background: 'rgba(213,66,30,0.1)',
-            border: '1px solid rgba(213,66,30,0.3)',
-            borderRadius: 4,
-            padding: '1px 6px',
-          }}
-        >
-          DISQUALIFIED
-        </div>
-      )}
-
       {isFirst && (
         <div
           className="absolute inset-0 rounded-xl pointer-events-none animate-glow"
@@ -311,6 +288,91 @@ function GodwRow({ contestant, totalGodwVotes, index, voteState, onVote, voteBad
   )
 }
 
+function FreezeCountdown({ frozenUntil }: { frozenUntil: string }) {
+  const [label, setLabel] = useState('')
+
+  useEffect(() => {
+    function tick() {
+      const diff = new Date(frozenUntil).getTime() - Date.now()
+      if (diff <= 0) { setLabel('Lifting soon…'); return }
+      const h = Math.floor(diff / 3_600_000)
+      const m = Math.floor((diff % 3_600_000) / 60_000)
+      const s = Math.floor((diff % 60_000) / 1_000)
+      setLabel(`Active in ${h}h ${m}m ${s}s`)
+    }
+    tick()
+    const id = setInterval(tick, 1_000)
+    return () => clearInterval(id)
+  }, [frozenUntil])
+
+  return (
+    <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.6rem', color: 'rgba(213,66,30,0.5)', marginTop: 2 }}>
+      {label}
+    </span>
+  )
+}
+
+function DisqualifiedRow({ contestant, index, frozenUntil }: { contestant: GodwContestant; index: number; frozenUntil?: string }) {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      className="relative flex items-center gap-3 mb-2 px-4 py-3 rounded-xl"
+      style={{
+        background: 'rgba(213,66,30,0.04)',
+        border: '1px solid rgba(213,66,30,0.15)',
+        opacity: 0.55,
+        filter: 'grayscale(0.8)',
+      }}
+    >
+      <div className="flex-shrink-0 w-8 text-center"
+        style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1rem', color: 'rgba(255,255,255,0.2)' }}>
+        —
+      </div>
+
+      <div className="relative flex-shrink-0 rounded-full overflow-hidden" style={{ width: 44, height: 44, border: '1px solid rgba(213,66,30,0.2)' }}>
+        {contestant.imageUrl ? (
+          <Image src={contestant.imageUrl} alt={contestant.stageName} fill className="object-cover" unoptimized />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center"
+            style={{ background: 'rgba(213,66,30,0.1)', fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.1rem', color: 'rgba(213,66,30,0.5)' }}>
+            {contestant.stageName.charAt(0).toUpperCase()}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="truncate leading-tight"
+          style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1rem', color: 'rgba(255,255,255,0.4)' }}>
+          {contestant.stageName}
+        </p>
+        {frozenUntil
+          ? <FreezeCountdown frozenUntil={frozenUntil} />
+          : <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', marginTop: 2 }}>Disqualified this round</span>
+        }
+      </div>
+
+      <div
+        style={{
+          fontFamily: 'CogsAndBolts, Impact, sans-serif',
+          fontSize: 9,
+          letterSpacing: '0.15em',
+          color: 'rgba(213,66,30,0.7)',
+          background: 'rgba(213,66,30,0.1)',
+          border: '1px solid rgba(213,66,30,0.25)',
+          borderRadius: 4,
+          padding: '3px 8px',
+          flexShrink: 0,
+        }}
+      >
+        DISQUALIFIED
+      </div>
+    </motion.div>
+  )
+}
+
 export default function GodwPage() {
   const [contestants, setContestants] = useState<GodwContestant[]>([])
   const [round, setRound] = useState<GodwRound | null>(null)
@@ -322,6 +384,7 @@ export default function GodwPage() {
   const [myVotedId, setMyVotedId] = useState<string | null>(null)
   const [hasVotedInRound, setHasVotedInRound] = useState(false)
   const [frozenIds, setFrozenIds] = useState<string[]>([])
+  const [freezeExpiries, setFreezeExpiries] = useState<Record<string, string>>({})
 
   const badgeKeyRef = useRef(0)
   const fingerprintRef = useRef<string | null>(null)
@@ -361,6 +424,7 @@ export default function GodwPage() {
         setContestants(data.contestants ?? [])
         setRound(data.round ?? null)
         setFrozenIds(data.frozenContestantIds ?? [])
+        setFreezeExpiries(data.freezeExpiries ?? {})
         setLoading(false)
       })
       .catch((err: Error) => {
@@ -424,6 +488,7 @@ export default function GodwPage() {
         setContestants(data.contestants ?? [])
         setRound(data.round ?? null)
         setFrozenIds(data.frozenContestantIds ?? [])
+        setFreezeExpiries(data.freezeExpiries ?? {})
       } catch { /* silent */ }
     }, 10_000)
     return () => clearInterval(id)
@@ -514,8 +579,15 @@ export default function GodwPage() {
     return 'idle'
   }
 
-  const winner = isExpired && contestants.length > 0 ? contestants[0] : null
-  const totalGodwVotes = contestants.reduce((sum, c) => sum + c.godwVoteCount, 0)
+  const activeContestants = contestants
+    .filter((c) => !frozenIds.includes(c.id))
+    .sort((a, b) => b.godwVoteCount - a.godwVoteCount)
+    .map((c, i) => ({ ...c, rank: i + 1 }))
+
+  const disqualifiedContestants = contestants.filter((c) => frozenIds.includes(c.id))
+
+  const winner = isExpired && activeContestants.length > 0 ? activeContestants[0] : null
+  const totalGodwVotes = activeContestants.reduce((sum, c) => sum + c.godwVoteCount, 0)
 
   return (
     <div className="relative min-h-screen overflow-hidden flex flex-col">
@@ -625,7 +697,7 @@ export default function GodwPage() {
             </motion.div>
           )}
 
-          {!loading && !error && contestants.length === 0 && (
+          {!loading && !error && activeContestants.length === 0 && disqualifiedContestants.length === 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center py-20 gap-2 text-center"
             >
@@ -636,7 +708,7 @@ export default function GodwPage() {
           )}
 
           <AnimatePresence mode="popLayout">
-            {contestants.map((contestant, index) => (
+            {activeContestants.map((contestant, index) => (
               <GodwRow
                 key={contestant.id}
                 contestant={contestant}
@@ -648,6 +720,39 @@ export default function GodwPage() {
               />
             ))}
           </AnimatePresence>
+
+          {!loading && disqualifiedContestants.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mt-6"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1" style={{ height: 1, background: 'rgba(213,66,30,0.2)' }} />
+                <p style={{
+                  fontFamily: 'CogsAndBolts, Impact, sans-serif',
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.2em',
+                  color: 'rgba(213,66,30,0.5)',
+                }}>
+                  DISQUALIFIED
+                </p>
+                <div className="flex-1" style={{ height: 1, background: 'rgba(213,66,30,0.2)' }} />
+              </div>
+
+              <AnimatePresence mode="popLayout">
+                {disqualifiedContestants.map((contestant, index) => (
+                  <DisqualifiedRow
+                    key={contestant.id}
+                    contestant={contestant}
+                    index={index}
+                    frozenUntil={freezeExpiries[contestant.id]}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
         </main>
 
         <footer className="flex flex-col items-center py-5 gap-1.5">

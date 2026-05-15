@@ -15,6 +15,17 @@ export async function GET() {
 
     const allowedIds = round?.contestantIds ?? []
 
+    // Compute effective frozen IDs: only those whose freeze hasn't expired yet
+    const now = new Date()
+    const activeFreezes = round
+      ? await prisma.godwFreeze.findMany({
+          where: { roundId: round.id, frozenUntil: { gt: now } },
+        })
+      : []
+    const frozenContestantIds = activeFreezes.map((f) => f.contestantId)
+    const freezeExpiries: Record<string, string> = {}
+    for (const f of activeFreezes) freezeExpiries[f.contestantId] = f.frozenUntil.toISOString()
+
     const redisData = await redis.zrange(GODW_KEY, 0, -1, { rev: true, withScores: true })
 
     const roundContestants = await prisma.contestant.findMany({
@@ -38,7 +49,7 @@ export async function GET() {
 
     const ranked = contestants.map((c, i) => ({ ...c, rank: i + 1 }))
 
-    return NextResponse.json({ contestants: ranked, round, frozenContestantIds: round?.frozenContestantIds ?? [] })
+    return NextResponse.json({ contestants: ranked, round, frozenContestantIds, freezeExpiries })
   } catch (err) {
     console.error('[godw/leaderboard]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

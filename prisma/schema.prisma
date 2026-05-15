@@ -56,6 +56,16 @@ model GodwVote {
   @@index([fingerprint])
 }
 
+model GodwFreeze {
+  id           String    @id @default(cuid())
+  contestantId String
+  roundId      String
+  frozenUntil  DateTime
+  createdAt    DateTime  @default(now())
+
+  @@unique([contestantId, roundId])
+}
+
 model GodwRound {
   id                 String   @id @default(cuid())
   name               String
