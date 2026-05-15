@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Custom Fonts ────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'CogsAndBolts';
+  src: url('/fonts/cogs_and_bolts/Cogs%20And%20Bolts.ttf') format('truetype');
+  font-weight: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nexa';
+  src: url('/fonts/nexa/Nexa-Trial-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nexa';
+  src: url('/fonts/nexa/Nexa-Trial-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* ─── Brand Tokens ────────────────────────────────────────────────────────── */
+
+:root {
+  --black: #000000;
+  --gold: #FEBF53;
+  --orange-red: #D5421E;
+  --white: #FFFFFF;
+  --gold-dark: #C9960A;
+  --gold-light: #FFD97A;
+  --surface: #0D0D0D;
+  --surface-2: #161616;
+  --border: rgba(254, 191, 83, 0.15);
+}
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+
+html,
+body {
+  height: 100%;
+  background-color: var(--black);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(213, 66, 30, 0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(254, 191, 83, 0.08) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* ─── Film-grain noise overlay ────────────────────────────────────────────── */
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+}
+
+/* ─── Custom thin gold scrollbar ──────────────────────────────────────────── */
+
+.leaderboard-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(254, 191, 83, 0.3) transparent;
+}
+
+.leaderboard-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.leaderboard-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.leaderboard-scroll::-webkit-scrollbar-thumb {
+  background: rgba(254, 191, 83, 0.25);
+  border-radius: 2px;
+}
+
+.leaderboard-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(254, 191, 83, 0.45);
+}
+
+/* ─── Tick-pulse for countdown digits ────────────────────────────────────── */
+
+@keyframes tick-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.tick-pulse {
+  animation: tick-pulse 150ms ease-out forwards;
+}
+
+/* ─── Urgent glow for sub-60s ────────────────────────────────────────────── */
+
+@keyframes urgent-throb {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+.urgent-throb {
+  animation: urgent-throb 600ms ease-in-out infinite;
+}
+
+/* ─── VOTING CLOSED blink ─────────────────────────────────────────────────── */
+
+@keyframes voting-closed-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.voting-closed {
+  animation: voting-closed-pulse 1.4s ease-in-out infinite;
+}

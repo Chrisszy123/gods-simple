@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Contestant {
+  id                   String        @id @default(cuid())
+  name                 String
+  stageName            String
+  imageUrl             String?
+  paystackCustomerId   String        @unique
+  virtualAccountNumber String        @unique
+  virtualAccountBank   String
+  totalVotes           Int           @default(0)
+  rank                 Int?
+  godwVoteCount        Int           @default(0)
+  createdAt            DateTime      @default(now())
+  transactions         Transaction[]
+  godwVotes            GodwVote[]
+}
+
+model Transaction {
+  id           String     @id @default(cuid())
+  paystackRef  String     @unique
+  contestantId String
+  contestant   Contestant @relation(fields: [contestantId], references: [id])
+  amountKobo   Int
+  votes        Int
+  status       String     @default("success")
+  createdAt    DateTime   @default(now())
+}
+
+model VotingRound {
+  id        String   @id @default(cuid())
+  name      String
+  endsAt    DateTime
+  isActive  Boolean  @default(true)
+  winnerId  String?
+  createdAt DateTime @default(now())
+}
+
+model GodwVote {
+  id           String     @id @default(cuid())
+  contestantId String
+  contestant   Contestant @relation(fields: [contestantId], references: [id])
+  ipAddress    String
+  createdAt    DateTime   @default(now())
+
+  @@unique([contestantId, ipAddress])
+  @@index([ipAddress])
+}
+
+model GodwRound {
+  id        String   @id @default(cuid())
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  isActive  Boolean  @default(true)
+  winnerId  String?
+  createdAt DateTime @default(now())
+}
