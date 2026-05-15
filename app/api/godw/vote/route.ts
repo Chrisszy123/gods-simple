@@ -42,6 +42,14 @@ export async function POST(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
+    // Reject vote if contestant is not in this week's GODW lineup
+    if (activeRound && activeRound.contestantIds.length > 0 && !activeRound.contestantIds.includes(contestantId)) {
+      return NextResponse.json(
+        { error: 'not_in_round', message: 'This contestant is not in the current GODW round' },
+        { status: 403 }
+      )
+    }
+
     if (activeRound) {
       const roundVote = await prisma.godwVote.findFirst({
         where: {

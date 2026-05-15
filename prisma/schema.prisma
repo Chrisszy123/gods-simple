@@ -55,11 +55,12 @@ model GodwVote {
 }
 
 model GodwRound {
-  id        String   @id @default(cuid())
-  name      String
-  startsAt  DateTime
-  endsAt    DateTime
-  isActive  Boolean  @default(true)
-  winnerId  String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  name          String
+  startsAt      DateTime
+  endsAt        DateTime
+  isActive      Boolean  @default(true)
+  winnerId      String?
+  contestantIds String[]
+  createdAt     DateTime @default(now())
 }

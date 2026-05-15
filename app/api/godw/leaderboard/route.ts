@@ -8,9 +8,18 @@ const GODW_KEY = 'godw_leaderboard'
 
 export async function GET() {
   try {
+    const round = await prisma.godwRound.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const allowedIds = round?.contestantIds ?? []
+
     const redisData = await redis.zrange(GODW_KEY, 0, -1, { rev: true, withScores: true })
 
-    const allContestants = await prisma.contestant.findMany()
+    const roundContestants = await prisma.contestant.findMany({
+      where: allowedIds.length > 0 ? { id: { in: allowedIds } } : undefined,
+    })
 
     let contestants
 
@@ -20,19 +29,14 @@ export async function GET() {
         scoreMap[redisData[i] as string] = Number(redisData[i + 1])
       }
 
-      contestants = allContestants
+      contestants = roundContestants
         .map((c) => ({ ...c, godwVoteCount: scoreMap[c.id] ?? c.godwVoteCount }))
         .sort((a, b) => b.godwVoteCount - a.godwVoteCount)
     } else {
-      contestants = allContestants.sort((a, b) => b.godwVoteCount - a.godwVoteCount)
+      contestants = roundContestants.sort((a, b) => b.godwVoteCount - a.godwVoteCount)
     }
 
     const ranked = contestants.map((c, i) => ({ ...c, rank: i + 1 }))
-
-    const round = await prisma.godwRound.findFirst({
-      where: { isActive: true },
-      orderBy: { createdAt: 'desc' },
-    })
 
     return NextResponse.json({ contestants: ranked, round })
   } catch (err) {

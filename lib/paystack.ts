@@ -1,7 +1,7 @@
 const PAYSTACK_BASE = 'https://api.paystack.co'
 
 async function paystackRequest<T>(
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'PUT',
   path: string,
   body?: object
 ): Promise<T> {
@@ -22,11 +22,25 @@ async function paystackRequest<T>(
   return res.json()
 }
 
-export async function createCustomer(email: string, firstName: string, lastName: string) {
+export async function createCustomer(email: string, firstName: string, lastName: string, phone?: string) {
   return paystackRequest<{
     status: boolean
     data: { customer_code: string; id: number }
-  }>('POST', '/customer', { email, first_name: firstName, last_name: lastName })
+  }>('POST', '/customer', { email, first_name: firstName, last_name: lastName, ...(phone ? { phone } : {}) })
+}
+
+export async function fetchCustomer(emailOrCode: string) {
+  return paystackRequest<{
+    status: boolean
+    data: { customer_code: string; id: number }
+  }>('GET', `/customer/${encodeURIComponent(emailOrCode)}`)
+}
+
+export async function updateCustomer(customerCode: string, phone: string) {
+  return paystackRequest<{
+    status: boolean
+    data: { customer_code: string }
+  }>('PUT', `/customer/${customerCode}`, { phone })
 }
 
 export async function createDedicatedAccount(customerCode: string) {
