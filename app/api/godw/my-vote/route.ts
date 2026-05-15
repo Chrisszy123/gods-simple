@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 function getIp(req: NextRequest): string {
   const forwarded = req.headers.get('x-forwarded-for')
   return forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1'

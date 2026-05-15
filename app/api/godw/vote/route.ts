@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { redis } from '@/lib/redis'
 import { pusherServer } from '@/lib/pusher'
 
+export const dynamic = 'force-dynamic'
+
 const GODW_KEY = 'godw_leaderboard'
 
 function hashIp(ip: string): string {

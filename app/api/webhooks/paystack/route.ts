@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { redis, LEADERBOARD_KEY } from '@/lib/redis'
 import { pusherServer } from '@/lib/pusher'
 
+export const dynamic = 'force-dynamic'
+
 // 1 vote = ₦100 = 10,000 kobo
 const KOBO_PER_VOTE = 10_000
 
