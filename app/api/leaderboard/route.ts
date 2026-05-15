@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const redisData = await redis.zrevrange(LEADERBOARD_KEY, 0, -1, 'WITHSCORES')
+    const redisData = await redis.zrange(LEADERBOARD_KEY, 0, -1, { rev: true, withScores: true })
 
     let contestants
 
@@ -15,8 +15,9 @@ export async function GET() {
       const ids: string[] = []
 
       for (let i = 0; i < redisData.length; i += 2) {
-        ids.push(redisData[i])
-        scoreMap[redisData[i]] = parseInt(redisData[i + 1], 10)
+        const id = redisData[i] as string
+        ids.push(id)
+        scoreMap[id] = Number(redisData[i + 1])
       }
 
       const rows = await prisma.contestant.findMany({

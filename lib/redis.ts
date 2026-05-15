@@ -1,15 +1,8 @@
-import Redis from 'ioredis'
+import { Redis } from '@upstash/redis'
 
-const globalForRedis = globalThis as unknown as {
-  redis: Redis | undefined
-}
-
-export const redis =
-  globalForRedis.redis ??
-  new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-    maxRetriesPerRequest: null,
-  })
-
-if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis
+export const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+})
 
 export const LEADERBOARD_KEY = 'leaderboard'

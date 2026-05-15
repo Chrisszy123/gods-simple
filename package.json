@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
+    "@upstash/redis": "^1.38.0",
     "bullmq": "^5.3.3",
     "canvas-confetti": "^1.9.2",
     "dotenv": "^16.4.5",

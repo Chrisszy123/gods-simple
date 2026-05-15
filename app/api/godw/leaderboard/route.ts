@@ -8,7 +8,7 @@ const GODW_KEY = 'godw_leaderboard'
 
 export async function GET() {
   try {
-    const redisData = await redis.zrevrange(GODW_KEY, 0, -1, 'WITHSCORES')
+    const redisData = await redis.zrange(GODW_KEY, 0, -1, { rev: true, withScores: true })
 
     const allContestants = await prisma.contestant.findMany()
 
@@ -17,7 +17,7 @@ export async function GET() {
     if (redisData.length > 0) {
       const scoreMap: Record<string, number> = {}
       for (let i = 0; i < redisData.length; i += 2) {
-        scoreMap[redisData[i]] = parseInt(redisData[i + 1], 10)
+        scoreMap[redisData[i] as string] = Number(redisData[i + 1])
       }
 
       contestants = allContestants
