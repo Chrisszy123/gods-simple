@@ -179,7 +179,7 @@ export default function HomePage() {
       {/* Bottom wordmark */}
       <motion.footer {...fadeUp(0.5)} className="relative z-10 flex justify-center pb-6">
         <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.6rem', color: 'rgba(255,255,255,0.18)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-          Powered by Paystack
+          Powered by GODS
         </p>
       </motion.footer>
     </div>

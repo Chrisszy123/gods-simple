@@ -1,7 +1,7 @@
 const PAYSTACK_BASE = 'https://api.paystack.co'
 
 async function paystackRequest<T>(
-  method: 'GET' | 'POST' | 'PUT',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   path: string,
   body?: object
 ): Promise<T> {
@@ -32,7 +32,7 @@ export async function createCustomer(email: string, firstName: string, lastName:
 export async function fetchCustomer(emailOrCode: string) {
   return paystackRequest<{
     status: boolean
-    data: { customer_code: string; id: number }
+    data: { customer_code: string; id: number; dedicated_account?: { id: number; account_number: string } }
   }>('GET', `/customer/${encodeURIComponent(emailOrCode)}`)
 }
 
@@ -44,6 +44,20 @@ export async function updateCustomer(
     status: boolean
     data: { customer_code: string }
   }>('PUT', `/customer/${customerCode}`, fields)
+}
+
+export async function fetchDedicatedAccount(customerCode: string) {
+  return paystackRequest<{
+    status: boolean
+    data: Array<{ id: number; account_number: string; account_name: string }>
+  }>('GET', `/dedicated_account?customer=${customerCode}`)
+}
+
+export async function unassignDedicatedAccount(dedicatedAccountId: number) {
+  return paystackRequest<{ status: boolean; message: string }>(
+    'DELETE',
+    `/dedicated_account/${dedicatedAccountId}`
+  )
 }
 
 export async function createDedicatedAccount(customerCode: string) {

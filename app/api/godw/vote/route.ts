@@ -13,8 +13,17 @@ function hashIp(ip: string): string {
 }
 
 function getIp(req: NextRequest): string {
+  // x-real-ip is set by Vercel's infrastructure and cannot be overridden by the client.
+  // x-forwarded-for[0] is user-controlled and trivially spoofed — never trust it as the sole source.
+  const realIp = req.headers.get('x-real-ip')
+  if (realIp) return realIp.trim()
+  // Fallback: rightmost entry in x-forwarded-for is added by the most-trusted proxy, not the client.
   const forwarded = req.headers.get('x-forwarded-for')
-  return forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1'
+  if (forwarded) {
+    const ips = forwarded.split(',')
+    return ips[ips.length - 1].trim()
+  }
+  return '127.0.0.1'
 }
 
 export async function POST(req: NextRequest) {
@@ -26,23 +35,25 @@ export async function POST(req: NextRequest) {
 
     const ip = getIp(req)
 
-    const existingVoteForContestant = await prisma.godwVote.findUnique({
-      where: { contestantId_ipAddress: { contestantId, ipAddress: ip } },
-    })
-
-    if (existingVoteForContestant) {
-      return NextResponse.json(
-        { error: 'already_voted', message: 'You have already voted for this contestant' },
-        { status: 409 }
-      )
-    }
-
     const activeRound = await prisma.godwRound.findFirst({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' },
     })
 
-    // Reject vote if contestant is not in this week's GODW lineup
+    // ── Layer 1: HTTP-only cookie ────────────────────────────────────────────
+    // Set by the server after a successful vote. Survives IP rotation and VPN
+    // switches because it lives in the browser, not tied to the network address.
+    if (activeRound) {
+      const cookieVote = req.cookies.get(`godw_round_${activeRound.id}`)
+      if (cookieVote) {
+        return NextResponse.json(
+          { error: 'round_vote_used', message: 'You have already used your vote this round' },
+          { status: 409 }
+        )
+      }
+    }
+
+    // Reject vote if contestant is not in this week's lineup
     if (activeRound && activeRound.contestantIds.length > 0 && !activeRound.contestantIds.includes(contestantId)) {
       return NextResponse.json(
         { error: 'not_in_round', message: 'This contestant is not in the current GODW round' },
@@ -50,20 +61,31 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // ── Layer 2: Atomic Redis lock ───────────────────────────────────────────
+    // SET NX is atomic — only one concurrent request per IP per round can win.
+    // This eliminates the race-condition window between the DB read and write.
     if (activeRound) {
-      const roundVote = await prisma.godwVote.findFirst({
-        where: {
-          ipAddress: ip,
-          createdAt: { gte: activeRound.startsAt, lte: activeRound.endsAt },
-        },
-      })
-
-      if (roundVote) {
+      const lockKey = `godw_vote_lock:${activeRound.id}:${hashIp(ip)}`
+      const ttl = Math.max(3600, Math.floor((new Date(activeRound.endsAt).getTime() - Date.now()) / 1000))
+      const acquired = await redis.set(lockKey, contestantId, { nx: true, ex: ttl })
+      if (!acquired) {
         return NextResponse.json(
           { error: 'round_vote_used', message: 'You have already used your vote this round' },
           { status: 409 }
         )
       }
+    }
+
+    // ── Layer 3: DB unique constraint ────────────────────────────────────────
+    // Belt-and-suspenders — catches any edge case that slips past layers 1 & 2.
+    const existingVote = await prisma.godwVote.findUnique({
+      where: { contestantId_ipAddress: { contestantId, ipAddress: ip } },
+    })
+    if (existingVote) {
+      return NextResponse.json(
+        { error: 'already_voted', message: 'You have already voted for this contestant' },
+        { status: 409 }
+      )
     }
 
     const [, updated] = await prisma.$transaction([
@@ -84,12 +106,23 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    return NextResponse.json({ success: true, newVoteCount: updated.godwVoteCount })
+    const response = NextResponse.json({ success: true, newVoteCount: updated.godwVoteCount })
+
+    // Plant the HTTP-only cookie on successful vote
+    if (activeRound) {
+      const cookieTtl = Math.max(3600, Math.floor((new Date(activeRound.endsAt).getTime() - Date.now()) / 1000))
+      response.cookies.set(`godw_round_${activeRound.id}`, contestantId, {
+        httpOnly: true,
+        sameSite: 'strict',
+        path: '/',
+        maxAge: cookieTtl,
+        secure: process.env.NODE_ENV === 'production',
+      })
+    }
+
+    return response
   } catch (err: unknown) {
-    if (
-      err instanceof Error &&
-      err.message.includes('Unique constraint failed')
-    ) {
+    if (err instanceof Error && err.message.includes('Unique constraint failed')) {
       return NextResponse.json(
         { error: 'already_voted', message: 'You have already voted for this contestant' },
         { status: 409 }
