@@ -36,11 +36,14 @@ export async function fetchCustomer(emailOrCode: string) {
   }>('GET', `/customer/${encodeURIComponent(emailOrCode)}`)
 }
 
-export async function updateCustomer(customerCode: string, phone: string) {
+export async function updateCustomer(
+  customerCode: string,
+  fields: { phone?: string; first_name?: string; last_name?: string }
+) {
   return paystackRequest<{
     status: boolean
     data: { customer_code: string }
-  }>('PUT', `/customer/${customerCode}`, { phone })
+  }>('PUT', `/customer/${customerCode}`, fields)
 }
 
 export async function createDedicatedAccount(customerCode: string) {

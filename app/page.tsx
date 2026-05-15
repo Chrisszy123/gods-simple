@@ -1,284 +1,187 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Image from 'next/image'
-import PusherClient from 'pusher-js'
-import confetti from 'canvas-confetti'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 
-import LeaderboardRow, { type ContestantRow } from '@/components/LeaderboardRow'
-import CountdownTimer from '@/components/CountdownTimer'
-import WinnerBanner from '@/components/WinnerBanner'
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, delay, ease: 'easeOut' },
+})
 
-interface VotingRound {
-  id: string
-  name: string
-  endsAt: string
-  isActive: boolean
-  winnerId: string | null
-}
-
-interface VoteBadge {
-  contestantId: string
-  delta: number
-  key: number
-}
-
-export default function Home() {
-  const [contestants, setContestants] = useState<ContestantRow[]>([])
-  const [round, setRound]             = useState<VotingRound | null>(null)
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState<string | null>(null)
-  const [isExpired, setIsExpired]     = useState(false)
-  const [badges, setBadges]           = useState<VoteBadge[]>([])
-
-  const badgeKeyRef = useRef(0)
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  /** Show a floating +N badge then remove it after 2 s */
-  const showBadge = useCallback((contestantId: string, delta: number) => {
-    badgeKeyRef.current += 1
-    const key = badgeKeyRef.current
-    setBadges((prev) => [...prev, { contestantId, delta, key }])
-    setTimeout(() => setBadges((prev) => prev.filter((b) => b.key !== key)), 2000)
-  }, [])
-
-  /** Apply a VOTE_UPDATE payload to the contestants list */
-  const applyVoteUpdate = useCallback(
-    (contestantId: string, newTotalVotes: number, delta: number) => {
-      setContestants((prev) => {
-        const updated = prev.map((c) =>
-          c.id === contestantId ? { ...c, totalVotes: newTotalVotes } : c
-        )
-        return updated
-          .sort((a, b) => b.totalVotes - a.totalVotes)
-          .map((c, i) => ({ ...c, rank: i + 1 }))
-      })
-      showBadge(contestantId, delta)
-    },
-    [showBadge]
-  )
-
-  // ── Initial data load ────────────────────────────────────────────────────
-
-  const fetchLeaderboard = useCallback(() => {
-    setLoading(true)
-    setError(null)
-
-    const timer = setTimeout(() => {
-      setLoading(false)
-      setError('Request timed out. Check your server and try again.')
-    }, 4000)
-
-    fetch('/api/leaderboard')
-      .then(async (res) => {
-        clearTimeout(timer)
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error ?? `Server error (${res.status})`)
-        setContestants(data.contestants ?? [])
-        setRound(data.round ?? null)
-        setLoading(false)
-      })
-      .catch((err: Error) => {
-        clearTimeout(timer)
-        setError(err.message || 'Failed to load.')
-        setLoading(false)
-      })
-  }, [])
-
-  useEffect(() => {
-    fetchLeaderboard()
-  }, [fetchLeaderboard])
-
-  // ── Pusher — real-time vote updates ─────────────────────────────────────
-
-  useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_PUSHER_KEY
-    if (!key) return
-
-    const pusher = new PusherClient(key, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'mt1',
-    })
-
-    const channel = pusher.subscribe('leaderboard')
-
-    channel.bind(
-      'VOTE_UPDATE',
-      ({ contestantId, newTotalVotes, delta }: {
-        contestantId: string
-        newTotalVotes: number
-        delta: number
-      }) => {
-        applyVoteUpdate(contestantId, newTotalVotes, delta)
-      }
-    )
-
-    return () => {
-      channel.unbind_all()
-      pusher.unsubscribe('leaderboard')
-      pusher.disconnect()
-    }
-  }, [applyVoteUpdate])
-
-  // ── Silent background poll — safety net for missed events ───────────────
-  // Silently re-syncs the full leaderboard every 10 s in case a Pusher event
-  // was dropped (disconnection, network blip, etc.)
-
-  useEffect(() => {
-    const id = setInterval(async () => {
-      try {
-        const res = await fetch('/api/leaderboard')
-        if (!res.ok) return
-        const data = await res.json()
-        // Only update state — no loading/error toggle, no badges
-        setContestants(data.contestants ?? [])
-        setRound(data.round ?? null)
-      } catch { /* silent */ }
-    }, 10_000)
-
-    return () => clearInterval(id)
-  }, [])
-
-  // ── Voting round expiry ───────────────────────────────────────────────────
-
-  const handleExpire = useCallback(() => {
-    setIsExpired(true)
-    confetti({ particleCount: 180, spread: 80, origin: { y: 0.55 }, colors: ['#FEBF53', '#FFD97A', '#ffffff', '#D5421E'] })
-    setTimeout(() => {
-      confetti({ particleCount: 80, angle: 60,  spread: 55, origin: { x: 0, y: 0.6 }, colors: ['#FEBF53', '#FFD97A', '#ffffff'] })
-      confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors: ['#FEBF53', '#FFD97A', '#ffffff'] })
-    }, 300)
-  }, [])
-
-  const winner     = isExpired && contestants.length > 0 ? contestants[0] : null
-  const totalVotes = contestants.reduce((sum, c) => sum + c.totalVotes, 0)
-
-  // ── Render ────────────────────────────────────────────────────────────────
-
+export default function HomePage() {
   return (
-    <div className="relative min-h-screen overflow-hidden flex flex-col">
+    <div className="relative min-h-screen flex flex-col overflow-hidden">
 
       {/* Atmosphere */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-x-0 bottom-0 h-[65vh]"
-          style={{ background: 'radial-gradient(ellipse 90% 70% at 50% 100%, rgba(213,66,30,0.38) 0%, transparent 70%)' }} />
+        <div className="absolute inset-x-0 bottom-0 h-[70vh]"
+          style={{ background: 'radial-gradient(ellipse 100% 80% at 50% 100%, rgba(213,66,30,0.32) 0%, transparent 70%)' }} />
         <div className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(254,191,83,0.07) 0%, transparent 65%)' }} />
-        <div className="absolute inset-x-0 top-0 h-32"
-          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)' }} />
+          style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 40%, rgba(254,191,83,0.06) 0%, transparent 65%)' }} />
       </div>
 
-      <div className="relative z-10 flex flex-col min-h-screen max-w-xl mx-auto w-full px-4">
+      <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-4 pt-8 pb-16 max-w-lg mx-auto w-full">
 
-        {/* ── Zone 1: Header ──────────────────────────────────────────── */}
-        <header className="flex flex-col items-center pt-8 pb-5">
+        {/* Logo */}
+        <motion.div {...fadeUp(0)} className="relative mb-6" style={{ width: 140, height: 140 }}>
+          <Image
+            src="/images/gods.png"
+            alt="Gods of the Stage"
+            fill
+            className="object-contain"
+            priority
+            style={{ filter: 'drop-shadow(0 0 28px rgba(254,191,83,0.35))' }}
+          />
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}
-            className="relative mb-3" style={{ height: 90, width: '100%', maxWidth: 260 }}
-          >
-            <Image
-              src="/images/gods.png" alt="Gods of the Stage" fill className="object-contain" priority
-            />
-          </motion.div>
+        {/* Title */}
+        <motion.h1 {...fadeUp(0.1)}
+          style={{
+            fontFamily: 'CogsAndBolts, Impact, sans-serif',
+            fontSize: 'clamp(1.6rem, 7vw, 2.6rem)',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--gold)',
+            textAlign: 'center',
+            textShadow: '0 0 40px rgba(254,191,83,0.25)',
+            lineHeight: 1.1,
+            marginBottom: 10,
+          }}
+        >
+          Gods of the Stage
+        </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-            style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.4em', textTransform: 'uppercase', color: 'var(--gold)', opacity: 0.7, marginBottom: 20 }}
-          >
-            Vote Now
-          </motion.p>
+        {/* Tagline */}
+        <motion.p {...fadeUp(0.18)}
+          style={{
+            fontFamily: 'Nexa, system-ui, sans-serif',
+            fontWeight: 400,
+            fontSize: '0.75rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.4)',
+            textAlign: 'center',
+            marginBottom: 36,
+          }}
+        >
+          Nigeria&apos;s Premier Live Talent Competition
+        </motion.p>
 
-          {round && (
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}>
-              <CountdownTimer endsAt={round.endsAt} onExpire={handleExpire} />
-            </motion.div>
-          )}
+        {/* Gold divider */}
+        <motion.div {...fadeUp(0.24)} className="w-full mb-10"
+          style={{ height: 1, background: 'linear-gradient(to right, transparent 0%, rgba(254,191,83,0.25) 30%, rgba(254,191,83,0.25) 70%, transparent 100%)' }} />
 
-          {round && (
-            <motion.p
-              initial={{ opacity: 0 }} animate={{ opacity: 0.35 }} transition={{ delay: 0.45 }}
-              style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.65rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--gold)', marginTop: 14 }}
+        {/* CTA buttons */}
+        <motion.div {...fadeUp(0.3)} className="flex flex-col sm:flex-row gap-3 w-full mb-12">
+          <Link href="/godw" className="flex-1">
+            <button
+              style={{
+                width: '100%',
+                fontFamily: 'CogsAndBolts, Impact, sans-serif',
+                fontSize: '1rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: '#000',
+                background: 'var(--gold)',
+                border: 'none',
+                borderRadius: 10,
+                padding: '14px 0',
+                cursor: 'pointer',
+                boxShadow: '0 0 28px rgba(254,191,83,0.3)',
+                transition: 'all 200ms',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold-light)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(254,191,83,0.5)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(254,191,83,0.3)' }}
             >
-              {round.name}
-            </motion.p>
-          )}
+              Vote — GODW ●
+            </button>
+          </Link>
 
-          <div className="mt-5 w-full"
-            style={{ height: 1, background: 'linear-gradient(to right, transparent 0%, rgba(254,191,83,0.2) 30%, rgba(254,191,83,0.2) 70%, transparent 100%)' }} />
-        </header>
+          <Link href="/about" className="flex-1">
+            <button
+              style={{
+                width: '100%',
+                fontFamily: 'CogsAndBolts, Impact, sans-serif',
+                fontSize: '1rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--gold)',
+                background: 'transparent',
+                border: '1px solid rgba(254,191,83,0.35)',
+                borderRadius: 10,
+                padding: '14px 0',
+                cursor: 'pointer',
+                transition: 'all 200ms',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'rgba(254,191,83,0.06)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(254,191,83,0.35)'; e.currentTarget.style.background = 'transparent' }}
+            >
+              About the Show
+            </button>
+          </Link>
+        </motion.div>
 
-        {/* ── Zone 2: Leaderboard ─────────────────────────────────────── */}
-        <main className="flex-1 overflow-y-auto leaderboard-scroll py-3">
+        {/* Info cards */}
+        <motion.div {...fadeUp(0.38)} className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
 
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="w-9 h-9 rounded-full border-2 animate-spin"
-                style={{ borderColor: 'rgba(254,191,83,0.2)', borderTopColor: 'var(--gold)' }} />
-              <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.8rem', color: 'var(--gold)', opacity: 0.45, letterSpacing: '0.1em' }}>
-                Loading…
+          {/* GODW — live */}
+          <Link href="/godw">
+            <div
+              className="rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:border-[rgba(254,191,83,0.4)]"
+              style={{
+                background: 'rgba(254,191,83,0.06)',
+                border: '1px solid rgba(254,191,83,0.2)',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+                  God of the Week
+                </span>
+                <span style={{ fontSize: 9, color: 'var(--orange-red)' }}>●</span>
+              </div>
+              <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: '#ffffff', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 8 }}>
+                Free voting.<br />Live now.
+              </p>
+              <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
+                Cast your vote for the week&apos;s best performer →
               </p>
             </div>
-          )}
+          </Link>
 
-          {error && !loading && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center py-20 gap-5 text-center px-6"
-            >
-              <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.85rem', color: 'var(--orange-red)', lineHeight: 1.6 }}>
-                {error}
-              </p>
-              <button onClick={fetchLeaderboard} className="transition-all active:scale-95"
-                style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--black)', background: 'var(--gold)', padding: '10px 28px', borderRadius: 8, border: 'none', cursor: 'pointer' }}
-              >
-                Try Again
-              </button>
-            </motion.div>
-          )}
-
-          {!loading && !error && contestants.length === 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-20 gap-2 text-center"
-            >
-              <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: 'var(--gold)', opacity: 0.35, letterSpacing: '0.08em' }}>
-                No contestants yet
-              </p>
-              <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>
-                Check back when the show begins
-              </p>
-            </motion.div>
-          )}
-
-          <AnimatePresence mode="popLayout">
-            {contestants.map((contestant, index) => (
-              <LeaderboardRow
-                key={contestant.id}
-                contestant={contestant}
-                totalVotes={totalVotes}
-                index={index}
-                voteBadge={badges.find((b) => b.contestantId === contestant.id)}
-              />
-            ))}
-          </AnimatePresence>
-        </main>
-
-        {/* ── Zone 3: Footer ──────────────────────────────────────────── */}
-        <footer className="flex flex-col items-center py-5 gap-1.5">
-          <div className="mb-3 w-full"
-            style={{ height: 1, background: 'linear-gradient(to right, transparent 0%, rgba(254,191,83,0.12) 30%, rgba(254,191,83,0.12) 70%, transparent 100%)' }} />
-          <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '0.65rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--gold)', opacity: 0.28 }}>
-            Gods of the Stage
-          </p>
-          <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em' }}>
-            Powered by Paystack
-          </p>
-        </footer>
+          {/* Leaderboard — coming soon */}
+          <div
+            className="rounded-2xl p-5"
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.07)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
+                Leaderboard
+              </span>
+              <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 4, padding: '2px 6px' }}>
+                Soon
+              </span>
+            </div>
+            <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 8 }}>
+              Paid voting.<br />Next week.
+            </p>
+            <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em' }}>
+              Support your favourite with real votes
+            </p>
+          </div>
+        </motion.div>
       </div>
 
-      <AnimatePresence>
-        {winner && <WinnerBanner key="winner" stageName={winner.stageName} />}
-      </AnimatePresence>
+      {/* Bottom wordmark */}
+      <motion.footer {...fadeUp(0.5)} className="relative z-10 flex justify-center pb-6">
+        <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.6rem', color: 'rgba(255,255,255,0.18)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Powered by Paystack
+        </p>
+      </motion.footer>
     </div>
   )
 }

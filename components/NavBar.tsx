@@ -6,9 +6,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState, useEffect, useRef } from 'react'
 
-const NAV_LINKS = [
-  { label: 'Leaderboard', href: '/' },
+type NavLink = { label: string; href: string; live?: boolean; soon?: boolean }
+
+const NAV_LINKS: NavLink[] = [
+  { label: 'Home', href: '/' },
   { label: 'GODW', href: '/godw', live: true },
+  { label: 'Leaderboard', href: '/leaderboard', soon: true },
   { label: 'Contestants', href: '/contestants' },
   { label: 'About', href: '/about' },
 ]
@@ -87,22 +90,19 @@ export default function NavBar() {
                     fontSize: 13,
                     textTransform: 'uppercase',
                     letterSpacing: '0.12em',
-                    color: active ? 'var(--gold)' : 'rgba(255,255,255,0.55)',
+                    color: active ? 'var(--gold)' : link.soon ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.55)',
                     transition: 'color 150ms',
                   }}
-                  className="group-hover:!text-[#FEBF53]"
+                  className={link.soon ? '' : 'group-hover:!text-[#FEBF53]'}
                 >
                   {link.label}
                 </span>
                 {link.live && (
-                  <span
-                    style={{
-                      fontFamily: 'Nexa, system-ui, sans-serif',
-                      fontSize: 10,
-                      color: 'var(--orange-red)',
-                    }}
-                  >
-                    ●
+                  <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: 10, color: 'var(--orange-red)' }}>●</span>
+                )}
+                {link.soon && (
+                  <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 3, padding: '1px 5px' }}>
+                    Soon
                   </span>
                 )}
                 {active && (
@@ -122,7 +122,7 @@ export default function NavBar() {
         <div className="flex items-center gap-4">
           <button
             className="hidden md:flex items-center cursor-pointer transition-all duration-200"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/godw')}
             style={{
               fontFamily: 'CogsAndBolts, Impact, sans-serif',
               fontSize: 12,
@@ -201,6 +201,9 @@ export default function NavBar() {
                     {link.label}
                     {link.live && (
                       <span style={{ fontSize: 10, color: 'var(--orange-red)' }}>●</span>
+                    )}
+                    {link.soon && (
+                      <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 3, padding: '1px 6px' }}>Soon</span>
                     )}
                   </Link>
                 )

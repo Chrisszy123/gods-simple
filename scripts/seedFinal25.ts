@@ -39,7 +39,7 @@ async function getOrCreateCustomer(email: string, firstName: string, lastName: s
   try {
     const existing = await fetchCustomer(email)
     const code = existing.data.customer_code
-    await updateCustomer(code, phone)
+    await updateCustomer(code, { phone })
     console.log(`(found existing customer, updated phone)`)
     return code
   } catch {
