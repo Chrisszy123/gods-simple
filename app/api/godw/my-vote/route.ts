@@ -23,6 +23,7 @@ function getIp(req: NextRequest): string {
 export async function GET(req: NextRequest) {
   try {
     const ip = getIp(req)
+    const fingerprint = req.nextUrl.searchParams.get('fp')
 
     const activeRound = await prisma.godwRound.findFirst({
       where: { isActive: true },
@@ -33,20 +34,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ hasVoted: false, votedForContestantId: null })
     }
 
-    // Check cookie first — fastest, works even after IP change
+    // 1. Cookie — fastest, persists across IP changes
     const cookieVote = req.cookies.get(`godw_round_${activeRound.id}`)
     if (cookieVote) {
       return NextResponse.json({ hasVoted: true, votedForContestantId: cookieVote.value })
     }
 
-    // Check Redis lock — same IP, catches votes from this session
+    // 2. Fingerprint Redis lock — catches same device with new IP
+    if (fingerprint && fingerprint.length > 8) {
+      const fpKey = `godw_fp_lock:${activeRound.id}:${fingerprint}`
+      const fpVote = await redis.get<string>(fpKey)
+      if (fpVote) {
+        return NextResponse.json({ hasVoted: true, votedForContestantId: fpVote })
+      }
+    }
+
+    // 3. IP Redis lock — catches same IP
     const lockKey = `godw_vote_lock:${activeRound.id}:${hashIp(ip)}`
     const redisVote = await redis.get<string>(lockKey)
     if (redisVote) {
       return NextResponse.json({ hasVoted: true, votedForContestantId: redisVote })
     }
 
-    // Fall back to DB — source of truth for older votes
+    // 4. DB fallback — source of truth
     const vote = await prisma.godwVote.findFirst({
       where: {
         ipAddress: ip,

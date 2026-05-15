@@ -48,10 +48,12 @@ model GodwVote {
   contestantId String
   contestant   Contestant @relation(fields: [contestantId], references: [id])
   ipAddress    String
+  fingerprint  String?    // browser fingerprint for cross-IP abuse tracing
   createdAt    DateTime   @default(now())
 
   @@unique([contestantId, ipAddress])
   @@index([ipAddress])
+  @@index([fingerprint])
 }
 
 model GodwRound {

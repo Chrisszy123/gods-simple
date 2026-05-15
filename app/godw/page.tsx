@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import CountdownTimer from '@/components/CountdownTimer'
 import WinnerBanner from '@/components/WinnerBanner'
 import VoteBadge from '@/components/VoteBadge'
+import { getBrowserFingerprint } from '@/lib/fingerprint'
 
 interface GodwContestant {
   id: string
@@ -278,6 +279,14 @@ export default function GodwPage() {
   const [hasVotedInRound, setHasVotedInRound] = useState(false)
 
   const badgeKeyRef = useRef(0)
+  const fingerprintRef = useRef<string | null>(null)
+
+  const getFingerprint = useCallback(async () => {
+    if (!fingerprintRef.current) {
+      fingerprintRef.current = await getBrowserFingerprint()
+    }
+    return fingerprintRef.current
+  }, [])
 
   const showBadge = useCallback((contestantId: string, delta: number) => {
     badgeKeyRef.current += 1
@@ -315,8 +324,10 @@ export default function GodwPage() {
   }, [])
 
   const fetchMyVote = useCallback(() => {
-    fetch('/api/godw/my-vote')
-      .then((res) => res.json())
+    getFingerprint().then((fp) => {
+      const url = fp ? `/api/godw/my-vote?fp=${fp}` : '/api/godw/my-vote'
+      return fetch(url)
+    }).then((res) => res.json())
       .then((data) => {
         if (data.hasVoted) {
           setHasVotedInRound(true)
@@ -376,10 +387,11 @@ export default function GodwPage() {
   const handleVote = useCallback(async (contestantId: string) => {
     setVotingId(contestantId)
     try {
+      const fingerprint = await getFingerprint()
       const res = await fetch('/api/godw/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contestantId }),
+        body: JSON.stringify({ contestantId, fingerprint }),
       })
       const data = await res.json()
 
@@ -437,7 +449,7 @@ export default function GodwPage() {
     } finally {
       setVotingId(null)
     }
-  }, [showBadge])
+  }, [showBadge, getFingerprint])
 
   const handleExpire = useCallback(() => {
     setIsExpired(true)

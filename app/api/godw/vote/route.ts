@@ -28,7 +28,8 @@ function getIp(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { contestantId } = await req.json()
+    const body = await req.json()
+    const { contestantId, fingerprint } = body as { contestantId?: string; fingerprint?: string }
     if (!contestantId || typeof contestantId !== 'string') {
       return NextResponse.json({ error: 'invalid_request', message: 'contestantId is required' }, { status: 400 })
     }
@@ -61,13 +62,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // ── Layer 2: Atomic Redis lock ───────────────────────────────────────────
+    // ── Layer 2: Atomic Redis lock (IP) ─────────────────────────────────────
     // SET NX is atomic — only one concurrent request per IP per round can win.
     // This eliminates the race-condition window between the DB read and write.
     if (activeRound) {
       const lockKey = `godw_vote_lock:${activeRound.id}:${hashIp(ip)}`
       const ttl = Math.max(3600, Math.floor((new Date(activeRound.endsAt).getTime() - Date.now()) / 1000))
       const acquired = await redis.set(lockKey, contestantId, { nx: true, ex: ttl })
+      if (!acquired) {
+        return NextResponse.json(
+          { error: 'round_vote_used', message: 'You have already used your vote this round' },
+          { status: 409 }
+        )
+      }
+    }
+
+    // ── Layer 4: Browser fingerprint lock ────────────────────────────────────
+    // Blocks the same device even after IP rotation (wifi cycling, VPN switch).
+    // Fingerprint is generated from canvas rendering + hardware + timezone —
+    // stable across incognito mode and network changes.
+    if (activeRound && fingerprint && typeof fingerprint === 'string' && fingerprint.length > 8) {
+      const fpKey = `godw_fp_lock:${activeRound.id}:${fingerprint}`
+      const ttl = Math.max(3600, Math.floor((new Date(activeRound.endsAt).getTime() - Date.now()) / 1000))
+      const acquired = await redis.set(fpKey, contestantId, { nx: true, ex: ttl })
       if (!acquired) {
         return NextResponse.json(
           { error: 'round_vote_used', message: 'You have already used your vote this round' },
@@ -89,7 +106,7 @@ export async function POST(req: NextRequest) {
     }
 
     const [, updated] = await prisma.$transaction([
-      prisma.godwVote.create({ data: { contestantId, ipAddress: ip } }),
+      prisma.godwVote.create({ data: { contestantId, ipAddress: ip, fingerprint: fingerprint ?? null } }),
       prisma.contestant.update({
         where: { id: contestantId },
         data: { godwVoteCount: { increment: 1 } },
