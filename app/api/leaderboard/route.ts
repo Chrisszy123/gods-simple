@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { redis, LEADERBOARD_KEY } from '@/lib/redis'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const redisData = await redis.zrevrange(LEADERBOARD_KEY, 0, -1, 'WITHSCORES')
