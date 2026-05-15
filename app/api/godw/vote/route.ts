@@ -62,6 +62,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Hard-block frozen contestants — server-side, cannot be bypassed by any client
+    if (activeRound && activeRound.frozenContestantIds.includes(contestantId)) {
+      return NextResponse.json(
+        { error: 'contestant_frozen', message: 'This contestant has been disqualified from voting' },
+        { status: 403 }
+      )
+    }
+
     // ── Layer 2: Atomic Redis lock (IP) ─────────────────────────────────────
     // SET NX is atomic — only one concurrent request per IP per round can win.
     // This eliminates the race-condition window between the DB read and write.

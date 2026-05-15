@@ -38,7 +38,7 @@ export async function GET() {
 
     const ranked = contestants.map((c, i) => ({ ...c, rank: i + 1 }))
 
-    return NextResponse.json({ contestants: ranked, round })
+    return NextResponse.json({ contestants: ranked, round, frozenContestantIds: round?.frozenContestantIds ?? [] })
   } catch (err) {
     console.error('[godw/leaderboard]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

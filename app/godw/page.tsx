@@ -39,7 +39,7 @@ interface VoteBadgeData {
   key: number
 }
 
-type VoteState = 'idle' | 'loading' | 'voted-this' | 'voted-other' | 'round-ended'
+type VoteState = 'idle' | 'loading' | 'voted-this' | 'voted-other' | 'round-ended' | 'frozen'
 
 function getRankStyle(rank: number) {
   if (rank === 1) return { color: 'var(--gold)', fontSize: '2rem', textShadow: '0 0 18px rgba(254,191,83,0.65)' }
@@ -72,6 +72,27 @@ function VoteButton({ contestantId, state, onVote }: VoteButtonProps) {
   const [hovered, setHovered] = useState(false)
 
   if (state === 'round-ended') return null
+
+  if (state === 'frozen') {
+    return (
+      <div
+        className="flex-shrink-0 flex items-center justify-center"
+        style={{
+          fontFamily: 'CogsAndBolts, Impact, sans-serif',
+          fontSize: 10,
+          letterSpacing: '0.08em',
+          color: 'rgba(213,66,30,0.7)',
+          background: 'rgba(213,66,30,0.08)',
+          border: '1px solid rgba(213,66,30,0.25)',
+          borderRadius: 6,
+          height: 32,
+          width: 72,
+        }}
+      >
+        DISQ.
+      </div>
+    )
+  }
 
   if (state === 'loading') {
     return (
@@ -183,7 +204,8 @@ interface GodwRowProps {
 
 function GodwRow({ contestant, totalGodwVotes, index, voteState, onVote, voteBadge }: GodwRowProps) {
   const pct = totalGodwVotes > 0 ? (contestant.godwVoteCount / totalGodwVotes) * 100 : 0
-  const isFirst = contestant.rank === 1
+  const isFrozen = voteState === 'frozen'
+  const isFirst = contestant.rank === 1 && !isFrozen
   const rankStyle = getRankStyle(contestant.rank)
   const avatarBorder = getAvatarBorder(contestant.rank)
   const barColor = getBarColor(contestant.rank)
@@ -201,12 +223,34 @@ function GodwRow({ contestant, totalGodwVotes, index, voteState, onVote, voteBad
       }}
       className="relative flex items-center gap-3 mb-2 px-4 py-3 rounded-xl"
       style={{
-        background: isFirst
+        background: isFrozen
+          ? 'rgba(213,66,30,0.04)'
+          : isFirst
           ? 'linear-gradient(135deg, rgba(254,191,83,0.07) 0%, rgba(254,191,83,0.03) 100%)'
           : 'rgba(255,255,255,0.025)',
-        border: `1px solid ${isFirst ? 'rgba(254,191,83,0.22)' : 'rgba(255,255,255,0.06)'}`,
+        border: `1px solid ${isFrozen ? 'rgba(213,66,30,0.18)' : isFirst ? 'rgba(254,191,83,0.22)' : 'rgba(255,255,255,0.06)'}`,
+        opacity: isFrozen ? 0.55 : 1,
+        filter: isFrozen ? 'grayscale(0.7)' : 'none',
       }}
     >
+      {isFrozen && (
+        <div
+          className="absolute top-2 right-16 z-10"
+          style={{
+            fontFamily: 'CogsAndBolts, Impact, sans-serif',
+            fontSize: 9,
+            letterSpacing: '0.15em',
+            color: 'rgba(213,66,30,0.8)',
+            background: 'rgba(213,66,30,0.1)',
+            border: '1px solid rgba(213,66,30,0.3)',
+            borderRadius: 4,
+            padding: '1px 6px',
+          }}
+        >
+          DISQUALIFIED
+        </div>
+      )}
+
       {isFirst && (
         <div
           className="absolute inset-0 rounded-xl pointer-events-none animate-glow"
@@ -277,6 +321,7 @@ export default function GodwPage() {
   const [votingId, setVotingId] = useState<string | null>(null)
   const [myVotedId, setMyVotedId] = useState<string | null>(null)
   const [hasVotedInRound, setHasVotedInRound] = useState(false)
+  const [frozenIds, setFrozenIds] = useState<string[]>([])
 
   const badgeKeyRef = useRef(0)
   const fingerprintRef = useRef<string | null>(null)
@@ -315,6 +360,7 @@ export default function GodwPage() {
         if (!res.ok) throw new Error(data.error ?? `Server error (${res.status})`)
         setContestants(data.contestants ?? [])
         setRound(data.round ?? null)
+        setFrozenIds(data.frozenContestantIds ?? [])
         setLoading(false)
       })
       .catch((err: Error) => {
@@ -377,6 +423,7 @@ export default function GodwPage() {
         const data = await res.json()
         setContestants(data.contestants ?? [])
         setRound(data.round ?? null)
+        setFrozenIds(data.frozenContestantIds ?? [])
       } catch { /* silent */ }
     }, 10_000)
     return () => clearInterval(id)
@@ -460,6 +507,7 @@ export default function GodwPage() {
 
   function getVoteState(contestantId: string): VoteState {
     if (isExpired) return 'round-ended'
+    if (frozenIds.includes(contestantId)) return 'frozen'
     if (votingId === contestantId) return 'loading'
     if (myVotedId === contestantId) return 'voted-this'
     if (hasVotedInRound) return 'voted-other'
