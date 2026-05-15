@@ -324,10 +324,8 @@ export default function GodwPage() {
   }, [])
 
   const fetchMyVote = useCallback(() => {
-    getFingerprint().then((fp) => {
-      const url = fp ? `/api/godw/my-vote?fp=${fp}` : '/api/godw/my-vote'
-      return fetch(url)
-    }).then((res) => res.json())
+    fetch('/api/godw/my-vote')
+      .then((res) => res.json())
       .then((data) => {
         if (data.hasVoted) {
           setHasVotedInRound(true)

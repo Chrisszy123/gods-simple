@@ -77,21 +77,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── Layer 4: Browser fingerprint lock ────────────────────────────────────
-    // Blocks the same device even after IP rotation (wifi cycling, VPN switch).
-    // Fingerprint is generated from canvas rendering + hardware + timezone —
-    // stable across incognito mode and network changes.
-    if (activeRound && fingerprint && typeof fingerprint === 'string' && fingerprint.length > 8) {
-      const fpKey = `godw_fp_lock:${activeRound.id}:${fingerprint}`
-      const ttl = Math.max(3600, Math.floor((new Date(activeRound.endsAt).getTime() - Date.now()) / 1000))
-      const acquired = await redis.set(fpKey, contestantId, { nx: true, ex: ttl })
-      if (!acquired) {
-        return NextResponse.json(
-          { error: 'round_vote_used', message: 'You have already used your vote this round' },
-          { status: 409 }
-        )
-      }
-    }
+    // Fingerprint is stored on the vote record for post-round abuse tracing
+    // but NOT used as a hard block — fingerprint collisions on identical devices
+    // (same phone model, same Chrome, same timezone) would wrongly deny real voters.
 
     // ── Layer 3: DB unique constraint ────────────────────────────────────────
     // Belt-and-suspenders — catches any edge case that slips past layers 1 & 2.
