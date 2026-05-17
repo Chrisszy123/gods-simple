@@ -142,7 +142,7 @@ export default function HomePage() {
                 <span style={{ fontSize: 9, color: 'var(--orange-red)' }}>●</span>
               </div>
               <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: '#ffffff', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 8 }}>
-                Free voting.<br />Live now.
+               God of the week voting<br />Live now.
               </p>
               <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
                 Cast your vote for the week&apos;s best performer →
@@ -167,10 +167,10 @@ export default function HomePage() {
               </span>
             </div>
             <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 8 }}>
-              Paid voting.<br />Next week.
+              THE EVICTION SHOW<br />
             </p>
             <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em' }}>
-              Support your favourite with real votes
+             Vote to save your contestant from eviction
             </p>
           </div>
         </motion.div>
