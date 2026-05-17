@@ -39,19 +39,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ hasVoted: true, votedForContestantId: cookieVote.value })
     }
 
-    // 2. IP Redis lock — catches same IP
+    // 2. IP Redis lock — catches same IP without cookie
     const lockKey = `godw_vote_lock:${activeRound.id}:${hashIp(ip)}`
     const redisVote = await redis.get<string>(lockKey)
     if (redisVote) {
       return NextResponse.json({ hasVoted: true, votedForContestantId: redisVote })
     }
 
-    // 4. DB fallback — source of truth
-    const vote = await prisma.godwVote.findFirst({
-      where: {
-        ipAddress: ip,
-        createdAt: { gte: activeRound.startsAt, lte: activeRound.endsAt },
-      },
+    // 3. DB — permanent source of truth, keyed by IP + roundId
+    const vote = await prisma.godwVote.findUnique({
+      where: { ipAddress_roundId: { ipAddress: ip, roundId: activeRound.id } },
     })
 
     return NextResponse.json({

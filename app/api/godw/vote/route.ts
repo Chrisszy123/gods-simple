@@ -14,10 +14,9 @@ function hashIp(ip: string): string {
 
 function getIp(req: NextRequest): string {
   // x-real-ip is set by Vercel's infrastructure and cannot be overridden by the client.
-  // x-forwarded-for[0] is user-controlled and trivially spoofed — never trust it as the sole source.
   const realIp = req.headers.get('x-real-ip')
   if (realIp) return realIp.trim()
-  // Fallback: rightmost entry in x-forwarded-for is added by the most-trusted proxy, not the client.
+  // Rightmost x-forwarded-for entry is the most-trusted proxy, not the client.
   const forwarded = req.headers.get('x-forwarded-for')
   if (forwarded) {
     const ips = forwarded.split(',')
@@ -41,30 +40,36 @@ export async function POST(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    // ── Layer 1: HTTP-only cookie ────────────────────────────────────────────
-    // Set by the server after a successful vote. Survives IP rotation and VPN
-    // switches because it lives in the browser, not tied to the network address.
-    if (activeRound) {
-      const cookieVote = req.cookies.get(`godw_round_${activeRound.id}`)
-      if (cookieVote) {
-        return NextResponse.json(
-          { error: 'round_vote_used', message: 'You have already used your vote this round' },
-          { status: 409 }
-        )
-      }
+    // Reject if no active round
+    if (!activeRound) {
+      return NextResponse.json({ error: 'no_active_round', message: 'No active voting round' }, { status: 403 })
     }
 
-    // Reject vote if contestant is not in this week's lineup
-    if (activeRound && activeRound.contestantIds.length > 0 && !activeRound.contestantIds.includes(contestantId)) {
+    // Reject if round has ended — prevents 1-hour TTL loophole when endsAt is in the past
+    if (new Date(activeRound.endsAt) < new Date()) {
+      return NextResponse.json({ error: 'round_ended', message: 'This voting round has ended' }, { status: 403 })
+    }
+
+    // ── Layer 1: HTTP-only cookie ────────────────────────────────────────────
+    // Survives IP rotation and VPN switches — tied to the browser, not the network.
+    const cookieVote = req.cookies.get(`godw_round_${activeRound.id}`)
+    if (cookieVote) {
+      return NextResponse.json(
+        { error: 'round_vote_used', message: 'You have already used your vote this round' },
+        { status: 409 }
+      )
+    }
+
+    // Reject if contestant is not in this round's lineup
+    if (activeRound.contestantIds.length > 0 && !activeRound.contestantIds.includes(contestantId)) {
       return NextResponse.json(
         { error: 'not_in_round', message: 'This contestant is not in the current GODW round' },
         { status: 403 }
       )
     }
 
-    // Hard-block frozen contestants — server-side, cannot be bypassed by any client.
-    // Check expiry: if frozenUntil has passed, the freeze is lifted automatically.
-    if (activeRound && activeRound.frozenContestantIds.includes(contestantId)) {
+    // Hard-block frozen contestants — expiry checked live, no manual unfreeze needed
+    if (activeRound.frozenContestantIds.includes(contestantId)) {
       const freeze = await prisma.godwFreeze.findUnique({
         where: { contestantId_roundId: { contestantId, roundId: activeRound.id } },
       })
@@ -76,39 +81,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── Layer 2: Atomic Redis lock (IP) ─────────────────────────────────────
-    // SET NX is atomic — only one concurrent request per IP per round can win.
-    // This eliminates the race-condition window between the DB read and write.
-    if (activeRound) {
-      const lockKey = `godw_vote_lock:${activeRound.id}:${hashIp(ip)}`
-      const ttl = Math.max(3600, Math.floor((new Date(activeRound.endsAt).getTime() - Date.now()) / 1000))
-      const acquired = await redis.set(lockKey, contestantId, { nx: true, ex: ttl })
-      if (!acquired) {
-        return NextResponse.json(
-          { error: 'round_vote_used', message: 'You have already used your vote this round' },
-          { status: 409 }
-        )
-      }
+    // ── Layer 2: Atomic Redis lock (IP + round) ──────────────────────────────
+    // SET NX is atomic — only one request per IP per round wins.
+    // TTL is always the full remaining round duration, never less.
+    const roundMs = new Date(activeRound.endsAt).getTime() - Date.now()
+    const lockTtl = Math.ceil(roundMs / 1000)
+    const lockKey = `godw_vote_lock:${activeRound.id}:${hashIp(ip)}`
+    const acquired = await redis.set(lockKey, contestantId, { nx: true, ex: lockTtl })
+    if (!acquired) {
+      return NextResponse.json(
+        { error: 'round_vote_used', message: 'You have already used your vote this round' },
+        { status: 409 }
+      )
     }
 
-    // Fingerprint is stored on the vote record for post-round abuse tracing
-    // but NOT used as a hard block — fingerprint collisions on identical devices
-    // (same phone model, same Chrome, same timezone) would wrongly deny real voters.
-
-    // ── Layer 3: DB unique constraint ────────────────────────────────────────
-    // Belt-and-suspenders — catches any edge case that slips past layers 1 & 2.
+    // ── Layer 3: DB unique constraint (IP + roundId) ─────────────────────────
+    // One vote per IP per round — regardless of contestant or cookie state.
+    // This is the permanent source of truth that survives Redis flushes.
     const existingVote = await prisma.godwVote.findUnique({
-      where: { contestantId_ipAddress: { contestantId, ipAddress: ip } },
+      where: { ipAddress_roundId: { ipAddress: ip, roundId: activeRound.id } },
     })
     if (existingVote) {
       return NextResponse.json(
-        { error: 'already_voted', message: 'You have already voted for this contestant' },
+        { error: 'round_vote_used', message: 'You have already used your vote this round' },
         { status: 409 }
       )
     }
 
     const [, updated] = await prisma.$transaction([
-      prisma.godwVote.create({ data: { contestantId, ipAddress: ip, fingerprint: fingerprint ?? null } }),
+      prisma.godwVote.create({
+        data: { contestantId, roundId: activeRound.id, ipAddress: ip, fingerprint: fingerprint ?? null },
+      }),
       prisma.contestant.update({
         where: { id: contestantId },
         data: { godwVoteCount: { increment: 1 } },
@@ -127,23 +130,21 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({ success: true, newVoteCount: updated.godwVoteCount })
 
-    // Plant the HTTP-only cookie on successful vote
-    if (activeRound) {
-      const cookieTtl = Math.max(3600, Math.floor((new Date(activeRound.endsAt).getTime() - Date.now()) / 1000))
-      response.cookies.set(`godw_round_${activeRound.id}`, contestantId, {
-        httpOnly: true,
-        sameSite: 'strict',
-        path: '/',
-        maxAge: cookieTtl,
-        secure: process.env.NODE_ENV === 'production',
-      })
-    }
+    // Plant the HTTP-only cookie — TTL exactly matches the round's remaining time
+    const cookieTtl = Math.ceil(roundMs / 1000)
+    response.cookies.set(`godw_round_${activeRound.id}`, contestantId, {
+      httpOnly: true,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: cookieTtl,
+      secure: process.env.NODE_ENV === 'production',
+    })
 
     return response
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes('Unique constraint failed')) {
       return NextResponse.json(
-        { error: 'already_voted', message: 'You have already voted for this contestant' },
+        { error: 'round_vote_used', message: 'You have already used your vote this round' },
         { status: 409 }
       )
     }

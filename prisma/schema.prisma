@@ -47,12 +47,14 @@ model GodwVote {
   id           String     @id @default(cuid())
   contestantId String
   contestant   Contestant @relation(fields: [contestantId], references: [id])
+  roundId      String?
   ipAddress    String
-  fingerprint  String?    // browser fingerprint for cross-IP abuse tracing
+  fingerprint  String?
   createdAt    DateTime   @default(now())
 
-  @@unique([contestantId, ipAddress])
+  @@unique([ipAddress, roundId])
   @@index([ipAddress])
+  @@index([roundId])
   @@index([fingerprint])
 }
 
