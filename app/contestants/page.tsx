@@ -126,23 +126,6 @@ function ContestantCard({ contestant, index }: { contestant: Contestant; index: 
           {contestant.stageName}
         </p>
 
-        <div className="flex items-baseline gap-1 mt-0.5">
-          <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.85rem', color: 'var(--gold)' }}>
-            {contestant.totalVotes.toLocaleString()}
-          </span>
-          <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Stage Votes
-          </span>
-        </div>
-
-        <div className="flex items-baseline gap-1">
-          <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
-            {contestant.godwVoteCount.toLocaleString()}
-          </span>
-          <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            GODW Votes
-          </span>
-        </div>
 
         <p style={{
           fontFamily: 'monospace',
