@@ -265,28 +265,7 @@ function ContestantCard({ contestant, totalVotes, isSafe, badge, preview, voting
         {contestant.stageName}
       </p>
 
-      {/* Delta badge only — no vote count shown */}
-      <div style={{ position: 'relative', height: 16, marginBottom: 8 }}>
-        <AnimatePresence>
-          {badge && <DeltaFloat key={badge.key} delta={badge.delta} />}
-        </AnimatePresence>
-      </div>
-
-      {/* Vote share bar */}
-      <div style={{
-        width: '100%', height: isSafe ? 4 : 3,
-        borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
-        marginBottom: !preview && acctNum ? 10 : 0,
-      }}>
-        <motion.div
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          style={{
-            height: '100%', borderRadius: 2,
-            background: isSafe ? 'linear-gradient(to right, #FEBF53, #D5421E)' : '#D5421E',
-          }}
-        />
-      </div>
+      <div style={{ marginBottom: !preview && acctNum ? 10 : 6 }} />
 
       {/* Account number / voting status — only on full chart (not preview) */}
       {!preview && (
@@ -301,24 +280,26 @@ function ContestantCard({ contestant, totalVotes, isSafe, badge, preview, voting
             <>
               <p style={{
                 fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700,
-                fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.3)', marginBottom: 4,
+                fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.3)', marginBottom: 5,
               }}>
                 {acctBank ?? 'Bank'} · Transfer to vote
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                 <p style={{
-                  fontFamily: 'monospace', fontSize: isSafe ? 15 : 13, fontWeight: 700,
-                  color: isSafe ? '#FEBF53' : 'rgba(255,255,255,0.8)',
-                  letterSpacing: '0.1em', flex: 1, lineHeight: 1,
+                  fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
+                  color: isSafe ? '#FEBF53' : 'rgba(255,255,255,0.85)',
+                  letterSpacing: '0.05em', lineHeight: 1,
+                  flex: 1, minWidth: 0,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {acctNum}
                 </p>
-                <CopyButton text={acctNum} small={!isSafe} />
+                <CopyButton text={acctNum} small />
               </div>
               <p style={{
                 fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400,
-                fontSize: 8, color: 'rgba(255,255,255,0.2)', marginTop: 4, letterSpacing: '0.04em',
+                fontSize: 8, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.04em',
               }}>
                 ₦200 = 1 vote
               </p>
@@ -450,7 +431,7 @@ export default function EvictionChart({ contestants: initial, preview = false, l
     <>
       {/* ── Mobile layout ─────────────────────────────────────────────────── */}
       <div className="md:hidden" style={{ width: '100%' }}>
-        <SectionLabel text="⚡ Safe From Eviction" color="#FEBF53" />
+        <SectionLabel text="⚡ Safe Zone" color="#FEBF53" />
         <div style={mobileGrid}>
           {displaySafe(safe).map(c => (
             <ContestantCard key={c.id} contestant={c} totalVotes={totalVotes} isSafe
@@ -503,7 +484,7 @@ export default function EvictionChart({ contestants: initial, preview = false, l
 
         {/* Safe tier */}
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <SectionLabel text="⚡ Safe From Eviction" color="#FEBF53" />
+          <SectionLabel text="⚡ Safe Zone" color="#FEBF53" />
           <div style={{ display: 'flex', justifyContent: 'center', gap: 24, paddingBottom: 52 }}>
             {displaySafe(safe).map((c, i) => (
               <ContestantCard key={c.id} contestant={c} totalVotes={totalVotes} isSafe
