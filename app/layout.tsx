@@ -6,6 +6,10 @@ import { Toaster } from 'sonner'
 export const metadata: Metadata = {
   title: 'Gods of the Stage',
   description: 'Real-time voting leaderboard for live talent shows',
+  icons: {
+    icon: '/images/gods.png',
+    apple: '/images/gods.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
