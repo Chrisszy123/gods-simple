@@ -47,30 +47,23 @@ export async function POST(req: NextRequest) {
   }
 
   const eventType = event.event as string
-  console.log(`[webhook] Received event: ${eventType}`)
 
   // ── 4. Only handle successful charges ────────────────────────────────────
   if (eventType !== 'charge.success') {
-    console.log(`[webhook] Ignored event type: ${eventType}`)
     return NextResponse.json({ message: 'OK' })
   }
 
   // ── 5. Safely extract fields — NUBAN and card payloads can differ ─────────
   try {
-    const data     = event.data as Record<string, unknown>
-    const channel  = data.channel as string | undefined
-    const amount   = data.amount as number
+    const data      = event.data as Record<string, unknown>
+    const amount    = data.amount as number
     const reference = data.reference as string
 
-    // customer_code lives at data.customer.customer_code for both card + NUBAN
     const customerObj  = data.customer as Record<string, unknown> | undefined
     const customerCode = customerObj?.customer_code as string | undefined
 
-    console.log(`[webhook] channel=${channel} amount=${amount} reference=${reference} customerCode=${customerCode}`)
-
     if (!customerCode) {
-      console.warn('[webhook] No customer_code in payload — cannot match contestant')
-      console.warn('[webhook] Full data:', JSON.stringify(data, null, 2))
+      console.error('[webhook] No customer_code in payload')
       return NextResponse.json({ message: 'No customer code' })
     }
 
@@ -80,7 +73,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!contestant) {
-      console.warn(`[webhook] No contestant found for customer_code: ${customerCode}`)
+      console.error(`[webhook] No contestant for customer_code: ${customerCode}`)
       return NextResponse.json({ message: 'Contestant not found' })
     }
 
@@ -91,7 +84,6 @@ export async function POST(req: NextRequest) {
     })
 
     if (alreadyProcessed) {
-      console.log(`[webhook] Already processed reference: ${reference}`)
       return NextResponse.json({ message: 'Already processed' })
     }
 
@@ -99,10 +91,8 @@ export async function POST(req: NextRequest) {
     const rate  = koboPerVote(contestant.stageName)
     const votes = Math.floor(amount / rate)
 
-    console.log(`[webhook] rate=${rate} kobo/vote for ${contestant.stageName} → ${votes} vote(s)`)
-
     if (votes < 1) {
-      console.warn(`[webhook] Amount ${amount} kobo is below minimum (${rate} kobo per vote) — no votes awarded`)
+      console.error(`[webhook] Amount ${amount} kobo below minimum for ${contestant.stageName}`)
       return NextResponse.json({ message: 'Amount too low for a vote' })
     }
 
@@ -143,7 +133,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.log(`[webhook] ✅ +${votes} vote${votes !== 1 ? 's' : ''} → ${contestant.stageName} (₦${amount / 100}, ref: ${reference})`)
     return NextResponse.json({ message: 'OK' })
 
   } catch (err) {
