@@ -282,24 +282,6 @@ export default function GodwPage() {
     return () => { channel.unbind_all(); pusher.unsubscribe('leaderboard'); pusher.disconnect() }
   }, [])
 
-  // ── Safety net poll ───────────────────────────────────────────────────────
-  useEffect(() => {
-    const id = setInterval(() => {
-      fetch('/api/leaderboard')
-        .then(r => r.json())
-        .then(data => {
-          const votingNowOpen = isVotingOpen()
-          const filtered = filterGodw<GodwContestant>(data.contestants ?? [])
-            .sort((a, b) => votingNowOpen
-              ? b.totalVotes - a.totalVotes
-              : a.stageName.localeCompare(b.stageName))
-            .map((c, i) => ({ ...c, rank: i + 1 }))
-          setContestants(filtered)
-        })
-        .catch(() => {/* silent */})
-    }, 60_000)
-    return () => clearInterval(id)
-  }, [])
 
   const handleExpire = useCallback(() => {
     setIsExpired(true)
