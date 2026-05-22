@@ -1,15 +1,18 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import EvictionChart, { type ChartContestant } from '@/components/EvictionChart'
+import CountdownTimer from '@/components/CountdownTimer'
 import { filterEviction } from '@/lib/eviction'
-import { isVotingOpen, VOTING_OPENS_AT } from '@/lib/voting-config'
+import { isVotingOpen, VOTING_OPENS_AT, VOTING_CLOSES_AT } from '@/lib/voting-config'
 
 export default function LeaderboardPage() {
   const [contestants, setContestants] = useState<ChartContestant[]>([])
   const [loading, setLoading]         = useState(true)
   const [error, setError]             = useState<string | null>(null)
+
+  const handleExpire = useCallback(() => {}, [])
 
   useEffect(() => {
     fetch('/api/leaderboard')
@@ -71,9 +74,27 @@ export default function LeaderboardPage() {
             fontSize: '0.75rem',
             color: 'rgba(255,255,255,0.3)',
             letterSpacing: '0.08em',
+            marginBottom: 20,
           }}>
             Top 2 are safe · Everyone else is at risk
           </p>
+
+          <div className="flex justify-center">
+            {new Date() < new Date(VOTING_OPENS_AT) ? (
+              <p style={{
+                fontFamily: 'Nexa, system-ui, sans-serif',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                color: 'rgba(254,191,83,0.55)',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}>
+                Voting opens {new Date(VOTING_OPENS_AT).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            ) : (
+              <CountdownTimer endsAt={VOTING_CLOSES_AT} onExpire={handleExpire} />
+            )}
+          </div>
         </motion.div>
 
         {/* Loading */}
