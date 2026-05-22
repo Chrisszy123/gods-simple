@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { isVotingOpen } from '@/lib/voting-config'
+import { GODW_NAMES } from '@/lib/godw'
+import { EVICTION_NAMES } from '@/lib/eviction'
 
 interface Contestant {
   id: string
@@ -137,34 +139,43 @@ function ContestantCard({ contestant, index }: { contestant: Contestant; index: 
           ACC: {contestant.virtualAccountNumber} · {contestant.virtualAccountBank}
         </p>
 
-        <Link
-          href="/godw"
-          className="mt-auto"
-          style={{
-            display: 'inline-block',
-            marginTop: 10,
-            fontFamily: 'CogsAndBolts, Impact, sans-serif',
-            fontSize: 11,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--gold)',
-            border: '1px solid rgba(254,191,83,0.4)',
-            borderRadius: 6,
-            padding: '5px 12px',
-            textAlign: 'center',
-            transition: 'background 200ms, color 200ms',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--gold)'
-            e.currentTarget.style.color = '#000'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent'
-            e.currentTarget.style.color = 'var(--gold)'
-          }}
-        >
-          Vote Free
-        </Link>
+        {(() => {
+          const name = contestant.stageName.trim().toUpperCase()
+          const isGodw = GODW_NAMES.some(n => n.trim().toUpperCase() === name)
+          const isEviction = EVICTION_NAMES.some(n => n.trim().toUpperCase() === name)
+          const href = isGodw ? '/godw' : isEviction ? '/leaderboard' : null
+          if (!href) return null
+          return (
+            <Link
+              href={href}
+              className="mt-auto"
+              style={{
+                display: 'inline-block',
+                marginTop: 10,
+                fontFamily: 'CogsAndBolts, Impact, sans-serif',
+                fontSize: 11,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'var(--gold)',
+                border: '1px solid rgba(254,191,83,0.4)',
+                borderRadius: 6,
+                padding: '5px 12px',
+                textAlign: 'center',
+                transition: 'background 200ms, color 200ms',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--gold)'
+                e.currentTarget.style.color = '#000'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent'
+                e.currentTarget.style.color = 'var(--gold)'
+              }}
+            >
+              Vote
+            </Link>
+          )
+        })()}
       </div>
     </motion.div>
   )
