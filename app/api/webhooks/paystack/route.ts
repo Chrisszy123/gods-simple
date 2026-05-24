@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { redis, LEADERBOARD_KEY } from '@/lib/redis'
 import { pusherServer } from '@/lib/pusher'
 import { GODW_NAMES } from '@/lib/godw'
+import { VOTING_OPENS_AT, VOTING_CLOSES_AT } from '@/lib/voting-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,7 +88,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Already processed' })
     }
 
-    // ── 8. Calculate votes (rate depends on GODW vs Eviction) ─────────────────
+    // ── 8. Reject votes outside the voting window ─────────────────────────────
+    const paidAt   = new Date((data.paid_at as string | undefined) ?? Date.now())
+    const opensAt  = new Date(VOTING_OPENS_AT)
+    const closesAt = new Date(VOTING_CLOSES_AT)
+
+    if (paidAt < opensAt || paidAt >= closesAt) {
+      console.error(`[webhook] Payment ${reference} at ${paidAt.toISOString()} is outside voting window — not counted`)
+      return NextResponse.json({ message: 'Outside voting window' })
+    }
+
+    // ── 10. Calculate votes (rate depends on GODW vs Eviction) ────────────────
     const rate  = koboPerVote(contestant.stageName)
     const votes = Math.floor(amount / rate)
 

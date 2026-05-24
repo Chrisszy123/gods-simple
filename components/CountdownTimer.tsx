@@ -105,13 +105,14 @@ const Colon = ({ urgent }: { urgent: boolean }) => (
 )
 
 export default function CountdownTimer({ endsAt, onExpire }: Props) {
-  const [time, setTime] = useState<TimeLeft>(() => getTimeLeft(endsAt))
+  const [time, setTime] = useState<TimeLeft | null>(null)
   const [expired, setExpired] = useState(false)
   const onExpireRef = useRef(onExpire)
   onExpireRef.current = onExpire
 
   useEffect(() => {
     const initial = getTimeLeft(endsAt)
+    setTime(initial)
     if (initial.totalMs <= 0) {
       setExpired(true)
       onExpireRef.current()
@@ -131,6 +132,8 @@ export default function CountdownTimer({ endsAt, onExpire }: Props) {
     return () => clearInterval(id)
   }, [endsAt])
 
+  if (time === null) return null
+
   if (expired) {
     return (
       <div
@@ -147,7 +150,7 @@ export default function CountdownTimer({ endsAt, onExpire }: Props) {
     )
   }
 
-  const urgent = time.totalMs > 0 && time.totalMs < 60_000
+  const urgent = time!.totalMs > 0 && time!.totalMs < 60_000
 
   return (
     <div className={`flex items-end gap-2 md:gap-3 ${urgent ? 'urgent-throb' : ''}`}>
