@@ -164,29 +164,29 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Leaderboard — coming soon */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.07)',
-            }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
-                Leaderboard
-              </span>
-              <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 4, padding: '2px 6px' }}>
-                Soon
-              </span>
+          {/* Evictions — live */}
+          <Link href="/leaderboard">
+            <div
+              className="rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:border-[rgba(213,66,30,0.5)]"
+              style={{
+                background: 'rgba(213,66,30,0.06)',
+                border: '1px solid rgba(213,66,30,0.2)',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#D5421E' }}>
+                  Evictions
+                </span>
+                <span style={{ fontSize: 9, color: 'var(--orange-red)' }}>●</span>
+              </div>
+              <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: '#ffffff', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 8 }}>
+                THE EVICTION SHOW
+              </p>
+              <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
+                Vote to save your contestant from eviction →
+              </p>
             </div>
-            <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 8 }}>
-              THE EVICTION SHOW<br />
-            </p>
-            <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em' }}>
-             Vote to save your contestant from eviction
-            </p>
-          </div>
+          </Link>
         </motion.div>
       </div>
 

@@ -74,9 +74,19 @@ export default function LeaderboardPage() {
             fontSize: '0.75rem',
             color: 'rgba(255,255,255,0.3)',
             letterSpacing: '0.08em',
-            marginBottom: 20,
+            marginBottom: 8,
           }}>
             Top 2 are safe · Everyone else is at risk
+          </p>
+          <p style={{
+            fontFamily: 'Nexa, system-ui, sans-serif',
+            fontWeight: 400,
+            fontSize: '0.75rem',
+            color: 'rgba(254,191,83,0.55)',
+            letterSpacing: '0.06em',
+            marginBottom: 20,
+          }}>
+            Vote for your contestant to move them into the SAFE Zone and keep them in the competition
           </p>
 
           <div className="flex justify-center">
