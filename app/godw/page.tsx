@@ -242,11 +242,12 @@ export default function GodwPage() {
       .then(async res => {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error ?? `Server error (${res.status})`)
-        const votingNowOpen = isVotingOpen()
+        // Alphabetical only before voting has ever started; show vote order during AND after
+        const preVoting = new Date() < new Date(VOTING_OPENS_AT)
         const filtered = filterGodw<GodwContestant>(data.contestants ?? [])
-          .sort((a, b) => votingNowOpen
-            ? b.totalVotes - a.totalVotes
-            : a.stageName.localeCompare(b.stageName))
+          .sort((a, b) => preVoting
+            ? a.stageName.localeCompare(b.stageName)
+            : b.totalVotes - a.totalVotes)
           .map((c, i) => ({ ...c, rank: i + 1 }))
         setContestants(filtered)
         setLoading(false)
@@ -267,9 +268,9 @@ export default function GodwPage() {
     channel.bind('VOTE_UPDATE', ({ contestantId, newTotalVotes, delta }: { contestantId: string; newTotalVotes: number; delta: number }) => {
       setContestants(prev => {
         const updated = prev.map(c => c.id === contestantId ? { ...c, totalVotes: newTotalVotes } : c)
-        const votingNowOpen = isVotingOpen()
+        const preVoting = new Date() < new Date(VOTING_OPENS_AT)
         return updated
-          .sort((a, b) => votingNowOpen ? b.totalVotes - a.totalVotes : a.stageName.localeCompare(b.stageName))
+          .sort((a, b) => preVoting ? a.stageName.localeCompare(b.stageName) : b.totalVotes - a.totalVotes)
           .map((c, i) => ({ ...c, rank: i + 1 }))
       })
 

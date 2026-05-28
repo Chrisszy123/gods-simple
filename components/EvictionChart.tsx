@@ -323,7 +323,9 @@ function ContestantCard({ contestant, totalVotes, isSafe, badge, preview, voting
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function EvictionChart({ contestants: initial, preview = false, limit = 6, votingOpen = true, votingOpensAt }: EvictionChartProps) {
-  const [sorted, setSorted]   = useState<Ranked[]>(() => toRanked(initial, !votingOpen).slice(0, limit))
+  // Alphabetical only BEFORE voting has ever started; after close, keep vote order
+  const preVoting = votingOpensAt ? new Date() < new Date(votingOpensAt) : false
+  const [sorted, setSorted]   = useState<Ranked[]>(() => toRanked(initial, preVoting).slice(0, limit))
   const [badges, setBadges]   = useState<DeltaBadge[]>([])
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
   const [svgData, setSvgData] = useState<SvgData | null>(null)
@@ -348,7 +350,7 @@ export default function EvictionChart({ contestants: initial, preview = false, l
     const channel = pusher.subscribe('leaderboard')
 
     channel.bind('VOTE_UPDATE', ({ contestantId, newTotalVotes, delta }: { contestantId: string; newTotalVotes: number; delta: number }) => {
-      setSorted(prev => toRanked(prev.map(c => c.id === contestantId ? { ...c, totalVotes: newTotalVotes } : c), !votingOpen).slice(0, limit))
+      setSorted(prev => toRanked(prev.map(c => c.id === contestantId ? { ...c, totalVotes: newTotalVotes } : c), preVoting).slice(0, limit))
 
       badgeKeyRef.current += 1
       const k = badgeKeyRef.current
