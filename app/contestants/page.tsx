@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { isVotingOpen } from '@/lib/voting-config'
 import { GODW_NAMES } from '@/lib/godw'
-import { EVICTION_NAMES } from '@/lib/eviction'
+import { EVICTION_NAMES, EVICTED_NAMES } from '@/lib/eviction'
 
 interface Contestant {
   id: string
@@ -94,6 +94,9 @@ export default function ContestantsPage() {
 function ContestantCard({ contestant, index }: { contestant: Contestant; index: number }) {
   const [hovered, setHovered] = useState(false)
 
+  const name = contestant.stageName.trim().toUpperCase()
+  const isEvicted = EVICTED_NAMES.some(n => n.trim().toUpperCase() === name)
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -101,33 +104,54 @@ function ContestantCard({ contestant, index }: { contestant: Contestant; index: 
       transition={{ delay: index * 0.05, duration: 0.35 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex flex-col overflow-hidden"
+      className="flex flex-col overflow-hidden relative"
       style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: `1px solid ${hovered ? 'rgba(254,191,83,0.35)' : 'rgba(254,191,83,0.1)'}`,
+        background: isEvicted ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${isEvicted ? 'rgba(255,255,255,0.06)' : hovered ? 'rgba(254,191,83,0.35)' : 'rgba(254,191,83,0.1)'}`,
         borderRadius: 12,
-        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+        transform: hovered && !isEvicted ? 'translateY(-4px)' : 'translateY(0)',
         transition: 'border-color 250ms, transform 250ms',
+        opacity: isEvicted ? 0.55 : 1,
       }}
     >
       {/* Photo */}
       <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: '12px 12px 0 0' }}>
         {contestant.imageUrl ? (
-          <Image src={contestant.imageUrl} alt={contestant.stageName} fill className="object-cover" unoptimized />
+          <Image src={contestant.imageUrl} alt={contestant.stageName} fill className="object-cover" unoptimized
+            style={{ filter: isEvicted ? 'grayscale(80%)' : 'none' }} />
         ) : (
           <div className="w-full h-full flex items-center justify-center"
             style={{ background: 'rgba(254,191,83,0.06)', fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '3rem', color: 'var(--gold)' }}>
             {contestant.stageName.charAt(0).toUpperCase()}
           </div>
         )}
+
+        {/* Evicted banner */}
+        {isEvicted && (
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.45)' }}>
+            <span style={{
+              fontFamily: 'CogsAndBolts, Impact, sans-serif',
+              fontSize: '1.1rem',
+              letterSpacing: '0.18em',
+              color: '#ff4444',
+              textShadow: '0 0 12px rgba(255,68,68,0.6)',
+              transform: 'rotate(-12deg)',
+              border: '2px solid rgba(255,68,68,0.7)',
+              padding: '4px 10px',
+              borderRadius: 4,
+            }}>
+              EVICTED
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Info */}
       <div className="flex flex-col gap-1 p-3 flex-1">
-        <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.1rem', color: '#ffffff', letterSpacing: '0.04em' }}>
+        <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.1rem', color: isEvicted ? 'rgba(255,255,255,0.45)' : '#ffffff', letterSpacing: '0.04em' }}>
           {contestant.stageName}
         </p>
-
 
         <p style={{
           fontFamily: 'monospace',
@@ -139,8 +163,7 @@ function ContestantCard({ contestant, index }: { contestant: Contestant; index: 
           ACC: {contestant.virtualAccountNumber} · {contestant.virtualAccountBank}
         </p>
 
-        {(() => {
-          const name = contestant.stageName.trim().toUpperCase()
+        {!isEvicted && (() => {
           const isGodw = GODW_NAMES.some(n => n.trim().toUpperCase() === name)
           const isEviction = EVICTION_NAMES.some(n => n.trim().toUpperCase() === name)
           const href = isGodw ? '/godw' : isEviction ? '/leaderboard' : null

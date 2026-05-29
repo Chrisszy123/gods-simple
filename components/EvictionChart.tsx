@@ -54,16 +54,12 @@ function toRanked(arr: ChartContestant[], alphabetical = false): Ranked[] {
     .map((c, i) => ({ ...c, rank: i + 1 }))
 }
 
-// Safe displayed 2nd-then-1st so position doesn't reveal rank
 function displaySafe(arr: Ranked[]): Ranked[] {
-  return arr.length === 2 ? [arr[1], arr[0]] : arr
+  return [...arr]
 }
 
-// At-risk scrambled: rank5, rank3, rank6, rank4 (indices 2,0,3,1)
-// Makes it hard to track position from card placement
 function scrambleAtRisk(arr: Ranked[]): Ranked[] {
-  const ORDER = [2, 0, 3, 1]
-  return ORDER.map(i => arr[i]).filter((c): c is Ranked => c !== undefined)
+  return [...arr]
 }
 
 // ── Copy button ───────────────────────────────────────────────────────────────
@@ -322,7 +318,7 @@ function ContestantCard({ contestant, totalVotes, isSafe, badge, preview, voting
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function EvictionChart({ contestants: initial, preview = false, limit = 6, votingOpen = true, votingOpensAt }: EvictionChartProps) {
+export default function EvictionChart({ contestants: initial, preview = false, limit = 20, votingOpen = true, votingOpensAt }: EvictionChartProps) {
   // Alphabetical only BEFORE voting has ever started; after close, keep vote order
   const preVoting = votingOpensAt ? new Date() < new Date(votingOpensAt) : false
   const [sorted, setSorted]   = useState<Ranked[]>(() => toRanked(initial, preVoting).slice(0, limit))
@@ -335,8 +331,8 @@ export default function EvictionChart({ contestants: initial, preview = false, l
   const safeCardRefs   = useRef<(HTMLDivElement | null)[]>([])
   const atRiskCardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const safe           = useMemo(() => sorted.slice(0, 2), [sorted])
-  const atRisk         = useMemo(() => sorted.slice(2),   [sorted])
+  const safe           = useMemo(() => sorted.slice(0, 3), [sorted])
+  const atRisk         = useMemo(() => sorted.slice(3),   [sorted])
   const totalVotes     = useMemo(() => sorted.reduce((s, c) => s + c.totalVotes, 0), [sorted])
   const showConnectors = safe.length >= 2 && atRisk.length > 0
 

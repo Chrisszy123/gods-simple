@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
             letterSpacing: '0.08em',
             marginBottom: 8,
           }}>
-            Top 2 are safe · Everyone else is at risk
+            Top 3 are safe · Everyone else is at risk
           </p>
           <p style={{
             fontFamily: 'Nexa, system-ui, sans-serif',
@@ -99,7 +99,7 @@ export default function LeaderboardPage() {
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
               }}>
-                Voting opens {new Date(VOTING_OPENS_AT).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                Voting opens {new Date(VOTING_OPENS_AT).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
               </p>
             ) : (
               <CountdownTimer endsAt={VOTING_CLOSES_AT} onExpire={handleExpire} />

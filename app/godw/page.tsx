@@ -213,7 +213,7 @@ function GodwRow({ contestant, totalVotes, index, badge, votingOpen, votingOpens
             whiteSpace: 'nowrap',
           }}>
             {votingOpensAt
-              ? `Voting opens ${new Date(votingOpensAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+              ? `Voting opens ${new Date(votingOpensAt).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}`
               : 'Voting opens soon'}
           </span>
         )}
@@ -358,7 +358,7 @@ export default function GodwPage() {
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
               }}>
-                Voting opens {new Date(VOTING_OPENS_AT).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                Voting opens {new Date(VOTING_OPENS_AT).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
               </p>
             ) : (
               <CountdownTimer endsAt={VOTING_CLOSES_AT} onExpire={handleExpire} />
