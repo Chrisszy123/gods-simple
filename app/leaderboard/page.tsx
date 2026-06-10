@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
             letterSpacing: '0.08em',
             marginBottom: 8,
           }}>
-            Top 3 are safe · Everyone else is at risk
+            Top 1 is safe · Everyone else is at risk
           </p>
           <p style={{
             fontFamily: 'Nexa, system-ui, sans-serif',
