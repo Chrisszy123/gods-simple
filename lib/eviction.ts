@@ -1,24 +1,18 @@
 export const EVICTION_NAMES = [
+  'Eric',
   '12 Men',
-  'Alfred Greatness',
-  'Anasemi',
-  'Gags',
-  'Clinton',
-  'Rhythdm',
-  'Ugochukwu Nwinya',
   'Emmanuella',
-  'Elite Empire',
-  'Symphonix',
-  'Azu Expressions',
-  'Manuel Ace',
-  'Arigem',
-  'Reiy',
+  'Team Unlimited',
 ]
 
 export const EVICTED_NAMES = [
   'Baritorn',
   'Elebachi',
   'Vaxxie',
+  'Alfred Greatness',
+  'Azu Expressions',
+  'Ugochukwu Nwinya',
+  'Arigem',
 ]
 
 export function filterEviction<T extends { stageName: string }>(contestants: T[]): T[] {
