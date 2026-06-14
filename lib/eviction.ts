@@ -1,8 +1,12 @@
 export const EVICTION_NAMES = [
-  'Eric',
-  '12 Men',
   'Emmanuella',
-  'Team Unlimited',
+  '12 Men',
+  'Hero',
+  'Rhythdm',
+  'Sophiya',
+  'Collins Sax',
+  'Manuel Ace',
+  'Thelordsmouthpiece',
 ]
 
 export const EVICTED_NAMES = [

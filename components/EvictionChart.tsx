@@ -331,8 +331,8 @@ export default function EvictionChart({ contestants: initial, preview = false, l
   const safeCardRefs   = useRef<(HTMLDivElement | null)[]>([])
   const atRiskCardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const safe           = useMemo(() => sorted.slice(0, 1), [sorted])
-  const atRisk         = useMemo(() => sorted.slice(1),   [sorted])
+  const safe           = useMemo(() => sorted.slice(0, 2), [sorted])
+  const atRisk         = useMemo(() => sorted.slice(2),   [sorted])
   const totalVotes     = useMemo(() => sorted.reduce((s, c) => s + c.totalVotes, 0), [sorted])
   const showConnectors = safe.length >= 2 && atRisk.length > 0
 

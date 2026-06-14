@@ -1,11 +1,11 @@
 // Edit this list to change which contestants appear on the GODW page.
 export const GODW_NAMES = [
+  'Anasemi',
+  'GAGS',
+  'Street Brothers',
   'Deeplydan',
-  'Reiy',
-  'Hero',
+  'Clinton',
   'Elite Empire',
-  'Thelordsmouthpiece',
-  'Rhythdm',
 ]
 
 export function filterGodw<T extends { stageName: string }>(contestants: T[]): T[] {
