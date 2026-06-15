@@ -17,6 +17,7 @@ export const EVICTED_NAMES = [
   'Azu Expressions',
   'Ugochukwu Nwinya',
   'Arigem',
+  'Team Unlimited'
 ]
 
 export function filterEviction<T extends { stageName: string }>(contestants: T[]): T[] {
