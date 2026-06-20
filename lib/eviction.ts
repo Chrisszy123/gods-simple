@@ -10,6 +10,7 @@ export const EVICTION_NAMES = [
   'Street Brothers',
   'Clinton',
   'Elite Empire',
+  'Reiy',
 ]
 
 export const EVICTED_NAMES = [
