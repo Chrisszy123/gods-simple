@@ -10,7 +10,9 @@
     "worker": "tsx workers/voteWorker.ts",
     "seed": "tsx scripts/seedContestants.ts",
     "seed:mock": "tsx scripts/seedMockContestants.ts",
-    "sim:votes": "tsx scripts/simulateVotes.ts"
+    "sim:votes": "tsx scripts/simulateVotes.ts",
+    "admin:reset:eviction": "tsx scripts/resetEvictionVotes.ts",
+    "admin:reset:godw": "tsx scripts/resetGodwVotes.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",

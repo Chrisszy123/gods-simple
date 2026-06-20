@@ -83,6 +83,22 @@ export default function HomePage() {
           Nigeria&apos;s Premier Live Talent Competition
         </motion.p>
 
+        {/* Finale banner */}
+        <motion.div {...fadeUp(0.2)} className="mb-6 px-4 py-2 rounded-full"
+          style={{ background: 'rgba(213,66,30,0.1)', border: '1px solid rgba(213,66,30,0.3)' }}>
+          <p style={{
+            fontFamily: 'Nexa, system-ui, sans-serif',
+            fontWeight: 700,
+            fontSize: '0.7rem',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: '#D5421E',
+            textAlign: 'center',
+          }}>
+            🔥 The Finale — July 2nd
+          </p>
+        </motion.div>
+
         {/* Gold divider */}
         <motion.div {...fadeUp(0.24)} className="w-full mb-10"
           style={{ height: 1, background: 'linear-gradient(to right, transparent 0%, rgba(254,191,83,0.25) 30%, rgba(254,191,83,0.25) 70%, transparent 100%)' }} />

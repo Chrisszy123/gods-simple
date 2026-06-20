@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import CountdownTimer from '@/components/CountdownTimer'
 import VoteBadge from '@/components/VoteBadge'
-import { filterGodw } from '@/lib/godw'
+import { filterGodw, GODW_ACTIVE_THIS_WEEK, LAST_GODW_WINNER } from '@/lib/godw'
 import { isVotingOpen, VOTING_OPENS_AT, VOTING_CLOSES_AT } from '@/lib/voting-config'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -237,6 +237,7 @@ export default function GodwPage() {
 
   // ── Fetch initial data ────────────────────────────────────────────────────
   const fetchData = useCallback(() => {
+    if (!GODW_ACTIVE_THIS_WEEK) { setLoading(false); return }
     setError(null)
     fetch('/api/leaderboard')
       .then(async res => {
@@ -259,6 +260,7 @@ export default function GodwPage() {
 
   // ── Pusher real-time updates ──────────────────────────────────────────────
   useEffect(() => {
+    if (!GODW_ACTIVE_THIS_WEEK) return
     const key = process.env.NEXT_PUBLIC_PUSHER_KEY
     if (!key) return
 
@@ -349,7 +351,18 @@ export default function GodwPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
           >
-            {new Date() < new Date(VOTING_OPENS_AT) ? (
+            {!GODW_ACTIVE_THIS_WEEK ? (
+              <p style={{
+                fontFamily: 'Nexa, system-ui, sans-serif',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                color: 'rgba(254,191,83,0.55)',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}>
+                No GODW vote this week
+              </p>
+            ) : new Date() < new Date(VOTING_OPENS_AT) ? (
               <p style={{
                 fontFamily: 'Nexa, system-ui, sans-serif',
                 fontWeight: 700,
@@ -372,7 +385,25 @@ export default function GodwPage() {
         {/* Leaderboard */}
         <main className="flex-1 overflow-y-auto leaderboard-scroll py-3">
 
-          {loading && (
+          {!GODW_ACTIVE_THIS_WEEK && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-16 gap-4 text-center px-6">
+              <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Last Week&apos;s Winner
+              </p>
+              <p style={{
+                fontFamily: 'CogsAndBolts, Impact, sans-serif',
+                fontSize: 'clamp(1.8rem, 6vw, 2.6rem)',
+                color: 'var(--gold)',
+                letterSpacing: '0.05em',
+                textShadow: '0 0 24px rgba(254,191,83,0.5)',
+              }}>
+                👑 {LAST_GODW_WINNER}
+              </p>
+            </motion.div>
+          )}
+
+          {GODW_ACTIVE_THIS_WEEK && loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <div className="w-9 h-9 rounded-full border-2 animate-spin"
                 style={{ borderColor: 'rgba(254,191,83,0.2)', borderTopColor: 'var(--gold)' }} />
@@ -382,7 +413,7 @@ export default function GodwPage() {
             </div>
           )}
 
-          {error && !loading && (
+          {GODW_ACTIVE_THIS_WEEK && error && !loading && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center justify-center py-20 gap-5 text-center px-6">
               <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.85rem', color: 'var(--orange-red)', lineHeight: 1.6 }}>
@@ -395,7 +426,7 @@ export default function GodwPage() {
             </motion.div>
           )}
 
-          {!loading && !error && contestants.length === 0 && (
+          {GODW_ACTIVE_THIS_WEEK && !loading && !error && contestants.length === 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center py-20 gap-2 text-center">
               <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: 'var(--gold)', opacity: 0.35, letterSpacing: '0.08em' }}>
