@@ -9,8 +9,8 @@ export const EVICTION_NAMES = [
   'GAGS',
   'Street Brothers',
   'Clinton',
-  'Elite Empire',
   'Reiy',
+  'Eric',
 ]
 
 export const EVICTED_NAMES = [
