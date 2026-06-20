@@ -50,8 +50,9 @@ function UnitBox({ value, label, urgent }: UnitBoxProps) {
       <div
         className="flex items-center justify-center rounded-lg"
         style={{
-          width: 68,
+          minWidth: 68,
           height: 68,
+          padding: '0 6px',
           background: 'rgba(254, 191, 83, 0.06)',
           border: `1px solid ${urgent ? 'rgba(213, 66, 30, 0.35)' : 'rgba(254, 191, 83, 0.15)'}`,
           transition: 'border-color 0.4s',
