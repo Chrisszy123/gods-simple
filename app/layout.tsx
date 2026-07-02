@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import NavBar from '@/components/NavBar'
+import VotingCountdownBanner from '@/components/VotingCountdownBanner'
 import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
@@ -17,18 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="text-white antialiased">
         <NavBar />
-        <div style={{
-          position: 'fixed', top: 64, left: 0, right: 0, zIndex: 40,
-          background: 'rgba(254,191,83,0.12)', borderBottom: '1px solid rgba(254,191,83,0.3)',
-          backdropFilter: 'blur(8px)', padding: '8px 16px', textAlign: 'center',
-        }}>
-          <p style={{
-            fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700,
-            fontSize: '0.8rem', color: '#FEBF53', letterSpacing: '0.08em',
-          }}>
-            ⚡ VOTING OPENS IN 10 MINUTES — GET READY!
-          </p>
-        </div>
+        <VotingCountdownBanner />
         <div style={{ paddingTop: 104 }}>
           {children}
         </div>
