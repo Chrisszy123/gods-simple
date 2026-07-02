@@ -54,10 +54,6 @@ function toRanked(arr: ChartContestant[], alphabetical = false): Ranked[] {
     .map((c, i) => ({ ...c, rank: i + 1 }))
 }
 
-function displaySafe(arr: Ranked[]): Ranked[] {
-  return [...arr]
-}
-
 function scrambleAtRisk(arr: Ranked[]): Ranked[] {
   return [...arr]
 }
@@ -328,11 +324,10 @@ export default function EvictionChart({ contestants: initial, preview = false, l
 
   const badgeKeyRef    = useRef(0)
   const chartRef       = useRef<HTMLDivElement>(null)
-  const safeCardRefs   = useRef<(HTMLDivElement | null)[]>([])
   const atRiskCardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const safe           = useMemo(() => sorted.slice(0, 1), [sorted])
-  const atRisk         = useMemo(() => sorted.slice(1),   [sorted])
+  const safe           = useMemo(() => [] as Ranked[], [])
+  const atRisk         = useMemo(() => sorted,          [sorted])
   const totalVotes     = useMemo(() => sorted.reduce((s, c) => s + c.totalVotes, 0), [sorted])
   const showConnectors = safe.length >= 1 && atRisk.length > 0
 
@@ -429,28 +424,14 @@ export default function EvictionChart({ contestants: initial, preview = false, l
     <>
       {/* ── Mobile layout ─────────────────────────────────────────────────── */}
       <div className="md:hidden" style={{ width: '100%' }}>
-        <SectionLabel text="⚡ Safe Zone" color="#FEBF53" />
+        <SectionLabel text="🔴 At Risk Of Eviction" color="#D5421E" />
         <div style={mobileGrid}>
-          {displaySafe(safe).map(c => (
-            <ContestantCard key={c.id} contestant={c} totalVotes={totalVotes} isSafe
+          {scrambleAtRisk(atRisk).map(c => (
+            <ContestantCard key={c.id} contestant={c} totalVotes={totalVotes} isSafe={false}
               badge={badges.find(b => b.contestantId === c.id)} preview={preview}
               votingOpen={votingOpen} votingOpensAt={votingOpensAt} />
           ))}
         </div>
-
-        {atRisk.length > 0 && (
-          <>
-            <div style={{ width: 1, height: 28, background: 'rgba(254,191,83,0.25)', margin: '14px auto' }} />
-            <SectionLabel text="🔴 At Risk Of Eviction" color="#D5421E" />
-            <div style={mobileGrid}>
-              {scrambleAtRisk(atRisk).map(c => (
-                <ContestantCard key={c.id} contestant={c} totalVotes={totalVotes} isSafe={false}
-                  badge={badges.find(b => b.contestantId === c.id)} preview={preview}
-                  votingOpen={votingOpen} votingOpensAt={votingOpensAt} />
-              ))}
-            </div>
-          </>
-        )}
       </div>
 
       {/* ── Desktop layout ────────────────────────────────────────────────── */}
@@ -479,19 +460,6 @@ export default function EvictionChart({ contestants: initial, preview = false, l
             ))}
           </svg>
         )}
-
-        {/* Safe tier */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <SectionLabel text="⚡ Safe Zone" color="#FEBF53" />
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 24, paddingBottom: 52 }}>
-            {displaySafe(safe).map((c, i) => (
-              <ContestantCard key={c.id} contestant={c} totalVotes={totalVotes} isSafe
-                badge={badges.find(b => b.contestantId === c.id)} preview={preview}
-                votingOpen={votingOpen} votingOpensAt={votingOpensAt}
-                cardRef={el => { safeCardRefs.current[i] = el }} />
-            ))}
-          </div>
-        </div>
 
         {/* At-risk tier */}
         {atRisk.length > 0 && (
