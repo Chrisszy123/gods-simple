@@ -1,13 +1,8 @@
 export const EVICTION_NAMES = [
-  'Hero',
   'Rhythdm',
   'Sophiya',
-  'Thelordsmouthpiece',
   'symphonix',
-  'Anasemi',
   'Elite Empire',
-  'GAGS',
-  'Street Brothers',
   'Clinton',
   'Reiy',
   'Eric',
