@@ -138,9 +138,32 @@ interface CardProps {
   cardRef?: (el: HTMLDivElement | null) => void
 }
 
+function useCountdown(target?: string) {
+  const [secs, setSecs] = useState(() =>
+    target ? Math.max(0, Math.floor((new Date(target).getTime() - Date.now()) / 1000)) : 0
+  )
+  useEffect(() => {
+    if (!target) return
+    const id = setInterval(() =>
+      setSecs(Math.max(0, Math.floor((new Date(target).getTime() - Date.now()) / 1000))), 1000)
+    return () => clearInterval(id)
+  }, [target])
+  return secs
+}
+
+function fmtCountdown(secs: number) {
+  const h = Math.floor(secs / 3600)
+  const m = Math.floor((secs % 3600) / 60)
+  const s = secs % 60
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`
+  if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`
+  return `${s}s`
+}
+
 function ContestantCard({ contestant, totalVotes, isSafe, badge, preview, votingOpen, votingOpensAt, cardRef }: CardProps) {
   const pct     = totalVotes > 0 ? (contestant.totalVotes / totalVotes) * 100 : 0
   const isFirst = contestant.rank === 1
+  const secsToOpen = useCountdown(votingOpen ? undefined : votingOpensAt)
 
   // All cards share the same base size; #1 gets a slight bump
   const desktopWidth = isFirst && isSafe ? 210 : 190
@@ -288,14 +311,25 @@ function ContestantCard({ contestant, totalVotes, isSafe, badge, preview, voting
               </p>
             </>
           ) : (
-            <p style={{
-              fontFamily: 'CogsAndBolts, Impact, sans-serif',
-              fontSize: 9, letterSpacing: '0.12em',
-              color: 'rgba(255,255,255,0.25)',
-              textAlign: 'center',
-            }}>
-              🔒 Voting opens 6:00 PM
-            </p>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{
+                fontFamily: 'CogsAndBolts, Impact, sans-serif',
+                fontSize: 9, letterSpacing: '0.12em',
+                color: 'rgba(255,255,255,0.25)',
+                marginBottom: 3,
+              }}>
+                🔒 Voting opens soon
+              </p>
+              {secsToOpen > 0 && (
+                <p style={{
+                  fontFamily: 'monospace', fontWeight: 700,
+                  fontSize: 11, letterSpacing: '0.06em',
+                  color: '#FEBF53',
+                }}>
+                  {fmtCountdown(secsToOpen)}
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}
