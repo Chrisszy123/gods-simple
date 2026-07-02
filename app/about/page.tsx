@@ -82,7 +82,7 @@ export default function AboutPage() {
             <VotingCard
               emoji="🔴"
               title="THE EVICTION SHOW"
-              body="Transfer to your favourite contestant's Wema Bank account. ₦200 = 1 vote. The top contestant by votes is safe. Everyone else is at risk of eviction. No cap — vote as many times as you like."
+              body="Transfer to your favourite contestant's Wema Bank account. ₦200 = 1 vote. Everyone is at risk of eviction — there is no safe zone this round. No cap — vote as many times as you like."
             />
             <VotingCard
               emoji="⚡"
