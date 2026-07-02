@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import Image from 'next/image'
 import PusherClient from 'pusher-js'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,15 +25,6 @@ interface DeltaBadge {
   contestantId: string
   delta: number
   key: number
-}
-
-interface SvgLine { x: number; y1: number; y2: number; id: string }
-
-interface SvgData {
-  safeLines: SvgLine[]
-  atRiskLines: SvgLine[]
-  barY: number; barX1: number; barX2: number
-  width: number; height: number
 }
 
 export interface EvictionChartProps {
@@ -320,16 +311,11 @@ export default function EvictionChart({ contestants: initial, preview = false, l
   const [sorted, setSorted]   = useState<Ranked[]>(() => toRanked(initial, preVoting).slice(0, limit))
   const [badges, setBadges]   = useState<DeltaBadge[]>([])
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
-  const [svgData, setSvgData] = useState<SvgData | null>(null)
-
   const badgeKeyRef    = useRef(0)
-  const chartRef       = useRef<HTMLDivElement>(null)
   const atRiskCardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const safe           = useMemo(() => [] as Ranked[], [])
-  const atRisk         = useMemo(() => sorted,          [sorted])
-  const totalVotes     = useMemo(() => sorted.reduce((s, c) => s + c.totalVotes, 0), [sorted])
-  const showConnectors = safe.length >= 1 && atRisk.length > 0
+  const atRisk     = useMemo(() => sorted, [sorted])
+  const totalVotes = useMemo(() => sorted.reduce((s, c) => s + c.totalVotes, 0), [sorted])
 
   // ── Pusher ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -354,52 +340,6 @@ export default function EvictionChart({ contestants: initial, preview = false, l
 
     return () => { channel.unbind_all(); pusher.unsubscribe('leaderboard'); pusher.disconnect() }
   }, [preview, limit])
-
-  // ── SVG connector lines ───────────────────────────────────────────────────
-  const recalcLines = useCallback(() => {
-    if (!showConnectors || !chartRef.current) return
-    const chartRect = chartRef.current.getBoundingClientRect()
-    if (chartRect.width === 0 || chartRect.height === 0) return
-
-    const safePoints = safeCardRefs.current
-      .slice(0, safe.length)
-      .map((el, i) => {
-        if (!el) return null
-        const r = el.getBoundingClientRect()
-        return { x: r.left - chartRect.left + r.width / 2, bottom: r.bottom - chartRect.top, id: safe[i]?.id ?? '' }
-      })
-      .filter((p): p is { x: number; bottom: number; id: string } => p !== null && p.id !== '')
-
-    const atRiskPoints = atRiskCardRefs.current
-      .slice(0, atRisk.length)
-      .map((el, i) => {
-        if (!el) return null
-        const r = el.getBoundingClientRect()
-        return { x: r.left - chartRect.left + r.width / 2, top: r.top - chartRect.top, id: atRisk[i]?.id ?? '' }
-      })
-      .filter((p): p is { x: number; top: number; id: string } => p !== null && p.id !== '')
-
-    if (!safePoints.length || !atRiskPoints.length) return
-
-    const safeBottom = Math.max(...safePoints.map(p => p.bottom))
-    const atRiskTop  = Math.min(...atRiskPoints.map(p => p.top))
-    const barY       = (safeBottom + atRiskTop) / 2
-    const allX       = [...safePoints.map(p => p.x), ...atRiskPoints.map(p => p.x)]
-
-    setSvgData({
-      safeLines:   safePoints.map(p  => ({ x: p.x, y1: p.bottom, y2: barY,  id: p.id })),
-      atRiskLines: atRiskPoints.map(p => ({ x: p.x, y1: barY,    y2: p.top, id: p.id })),
-      barY, barX1: Math.min(...allX), barX2: Math.max(...allX),
-      width: chartRect.width, height: chartRect.height,
-    })
-  }, [safe, atRisk, showConnectors])
-
-  useEffect(() => { const t = setTimeout(recalcLines, 350); return () => clearTimeout(t) }, [recalcLines, sorted])
-  useEffect(() => {
-    recalcLines()
-    window.addEventListener('resize', recalcLines)
-    return () => window.removeEventListener('resize', recalcLines)
-  }, [recalcLines])
 
   if (sorted.length === 0) {
     return (
@@ -435,32 +375,7 @@ export default function EvictionChart({ contestants: initial, preview = false, l
       </div>
 
       {/* ── Desktop layout ────────────────────────────────────────────────── */}
-      <div ref={chartRef} className="hidden md:block" style={{ position: 'relative', width: '100%', overflowX: 'hidden' }}>
-        {/* SVG connector overlay */}
-        {svgData && showConnectors && (
-          <svg style={{
-            position: 'absolute', top: 0, left: 0,
-            width: svgData.width, height: svgData.height,
-            zIndex: 0, pointerEvents: 'none', overflow: 'visible',
-          }}>
-            {svgData.safeLines.map(line => (
-              <line key={`safe-${line.id}`}
-                x1={line.x} y1={line.y1} x2={line.x} y2={line.y2}
-                stroke={flashIds.has(line.id) ? 'rgba(254,191,83,0.8)' : 'rgba(254,191,83,0.25)'}
-                strokeWidth={1} style={{ transition: 'stroke 0.3s ease' }} />
-            ))}
-            <line
-              x1={svgData.barX1} y1={svgData.barY} x2={svgData.barX2} y2={svgData.barY}
-              stroke="rgba(254,191,83,0.25)" strokeWidth={1} />
-            {svgData.atRiskLines.map(line => (
-              <line key={`atrisk-${line.id}`}
-                x1={line.x} y1={line.y1} x2={line.x} y2={line.y2}
-                stroke={flashIds.has(line.id) ? 'rgba(254,191,83,0.8)' : 'rgba(254,191,83,0.25)'}
-                strokeWidth={1} style={{ transition: 'stroke 0.3s ease' }} />
-            ))}
-          </svg>
-        )}
-
+      <div className="hidden md:block" style={{ width: '100%' }}>
         {/* At-risk tier */}
         {atRisk.length > 0 && (
           <div style={{ position: 'relative', zIndex: 1 }}>
