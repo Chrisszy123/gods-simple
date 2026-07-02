@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
             letterSpacing: '0.08em',
             marginBottom: 8,
           }}>
-            Everyone is at risk · No safe zone this round
+            Top 1 is safe · Everyone else is at risk
           </p>
           <p style={{
             fontFamily: 'Nexa, system-ui, sans-serif',
@@ -86,7 +86,7 @@ export default function LeaderboardPage() {
             letterSpacing: '0.06em',
             marginBottom: 20,
           }}>
-            Vote for your favourite contestant to keep them in the competition
+            Vote for your contestant to move them into the SAFE Zone and keep them in the competition
           </p>
 
           <div className="flex justify-center">
