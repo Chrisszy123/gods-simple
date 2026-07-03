@@ -3,10 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import Link from 'next/link'
-import { isVotingOpen } from '@/lib/voting-config'
-import { GODW_NAMES } from '@/lib/godw'
-import { EVICTION_NAMES, EVICTED_NAMES } from '@/lib/eviction'
+import { EVICTED_NAMES } from '@/lib/eviction'
 
 interface Contestant {
   id: string
@@ -14,9 +11,6 @@ interface Contestant {
   name: string
   imageUrl: string | null
   totalVotes: number
-  godwVoteCount: number
-  virtualAccountNumber: string
-  virtualAccountBank: string
 }
 
 export default function ContestantsPage() {
@@ -27,10 +21,8 @@ export default function ContestantsPage() {
     fetch('/api/leaderboard')
       .then((r) => r.json())
       .then((data) => {
-        const list: Contestant[] = data.contestants ?? []
-        if (!isVotingOpen()) {
-          list.sort((a, b) => a.stageName.localeCompare(b.stageName))
-        }
+        const list: Contestant[] = (data.contestants ?? [])
+          .sort((a: Contestant, b: Contestant) => a.stageName.localeCompare(b.stageName))
         setContestants(list)
         setLoading(false)
       })
@@ -70,7 +62,7 @@ export default function ContestantsPage() {
             color: 'rgba(254,191,83,0.55)',
             letterSpacing: '0.15em',
           }}>
-            Meet the gods
+            Season 1 · All Contestants
           </p>
         </motion.div>
 
@@ -148,57 +140,10 @@ function ContestantCard({ contestant, index }: { contestant: Contestant; index: 
       </div>
 
       {/* Info */}
-      <div className="flex flex-col gap-1 p-3 flex-1">
+      <div className="flex flex-col gap-1 p-3">
         <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.1rem', color: isEvicted ? 'rgba(255,255,255,0.45)' : '#ffffff', letterSpacing: '0.04em' }}>
           {contestant.stageName}
         </p>
-
-        <p style={{
-          fontFamily: 'monospace',
-          fontSize: '0.6rem',
-          color: 'rgba(255,255,255,0.4)',
-          marginTop: 4,
-          lineHeight: 1.5,
-        }}>
-          ACC: {contestant.virtualAccountNumber} · {contestant.virtualAccountBank}
-        </p>
-
-        {!isEvicted && (() => {
-          const isGodw = GODW_NAMES.some(n => n.trim().toUpperCase() === name)
-          const isEviction = EVICTION_NAMES.some(n => n.trim().toUpperCase() === name)
-          const href = isGodw ? '/godw' : isEviction ? '/leaderboard' : null
-          if (!href) return null
-          return (
-            <Link
-              href={href}
-              className="mt-auto"
-              style={{
-                display: 'inline-block',
-                marginTop: 10,
-                fontFamily: 'CogsAndBolts, Impact, sans-serif',
-                fontSize: 11,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: 'var(--gold)',
-                border: '1px solid rgba(254,191,83,0.4)',
-                borderRadius: 6,
-                padding: '5px 12px',
-                textAlign: 'center',
-                transition: 'background 200ms, color 200ms',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--gold)'
-                e.currentTarget.style.color = '#000'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent'
-                e.currentTarget.style.color = 'var(--gold)'
-              }}
-            >
-              Vote
-            </Link>
-          )
-        })()}
       </div>
     </motion.div>
   )

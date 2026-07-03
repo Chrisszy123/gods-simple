@@ -3,9 +3,6 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import EvictionChart, { type ChartContestant } from '@/components/EvictionChart'
-import { filterEviction } from '@/lib/eviction'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
@@ -14,17 +11,6 @@ const fadeUp = (delay = 0) => ({
 })
 
 export default function HomePage() {
-  const [top3, setTop3] = useState<ChartContestant[]>([])
-
-  useEffect(() => {
-    fetch('/api/leaderboard')
-      .then(r => r.json())
-      .then(d => {
-        setTop3(filterEviction<ChartContestant>(d.contestants ?? []).slice(0, 3))
-      })
-      .catch(() => {/* silent — preview is optional */})
-  }, [])
-
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
 
@@ -83,29 +69,157 @@ export default function HomePage() {
           Nigeria&apos;s Premier Live Talent Competition
         </motion.p>
 
-        {/* Finale banner */}
-        <motion.div {...fadeUp(0.2)} className="mb-6 px-4 py-2 rounded-full"
+        {/* Season closed pill */}
+        <motion.div {...fadeUp(0.2)} className="mb-8 px-5 py-2 rounded-full"
           style={{ background: 'rgba(213,66,30,0.1)', border: '1px solid rgba(213,66,30,0.3)' }}>
           <p style={{
-            fontFamily: 'Nexa, system-ui, sans-serif',
-            fontWeight: 700,
-            fontSize: '0.7rem',
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            color: '#D5421E',
-            textAlign: 'center',
+            fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700,
+            fontSize: '0.7rem', letterSpacing: '0.18em', textTransform: 'uppercase',
+            color: '#D5421E', textAlign: 'center',
           }}>
-            🔥 The Finale — July 2nd
+            🏆 Season 1 — Officially Closed
           </p>
         </motion.div>
 
+        {/* Winner card */}
+        <motion.div {...fadeUp(0.26)} className="w-full mb-8" style={{
+          borderRadius: 20,
+          background: 'linear-gradient(145deg, rgba(254,191,83,0.12) 0%, rgba(254,191,83,0.04) 100%)',
+          border: '1.5px solid rgba(254,191,83,0.45)',
+          boxShadow: '0 0 48px rgba(254,191,83,0.18), 0 0 80px rgba(254,191,83,0.08)',
+          padding: '28px 20px 24px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+        }}>
+          {/* Crown */}
+          <p style={{ fontSize: '2rem', marginBottom: 12, lineHeight: 1 }}>👑</p>
+
+          <p style={{
+            fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700,
+            fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase',
+            color: 'rgba(254,191,83,0.6)', marginBottom: 16,
+          }}>
+            Season 1 Winner
+          </p>
+
+          {/* Deeply Dan photo */}
+          <div style={{
+            width: 110, height: 110, borderRadius: '50%', overflow: 'hidden',
+            border: '3px solid #FEBF53',
+            boxShadow: '0 0 32px rgba(254,191,83,0.5), 0 0 64px rgba(254,191,83,0.2)',
+            marginBottom: 16, flexShrink: 0,
+          }}>
+            <Image
+              src="/images/GOTS/DEEPLYDAN.jpg"
+              alt="Deeply Dan"
+              width={110} height={110}
+              className="object-cover w-full h-full"
+              unoptimized
+            />
+          </div>
+
+          <h2 style={{
+            fontFamily: 'CogsAndBolts, Impact, sans-serif',
+            fontSize: 'clamp(1.6rem, 7vw, 2.2rem)',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: '#FEBF53',
+            textShadow: '0 0 28px rgba(254,191,83,0.5)',
+            textAlign: 'center', marginBottom: 10, lineHeight: 1.1,
+          }}>
+            Deeply Dan
+          </h2>
+
+          <p style={{
+            fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400,
+            fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)',
+            textAlign: 'center', letterSpacing: '0.04em', lineHeight: 1.6,
+            maxWidth: 260,
+          }}>
+            The God of the Stage. Thank you to everyone who voted this season.
+          </p>
+
+          <div style={{ width: '80%', height: 1, background: 'rgba(254,191,83,0.2)', margin: '18px 0' }} />
+
+          <p style={{
+            fontFamily: 'CogsAndBolts, Impact, sans-serif',
+            fontSize: '0.85rem', letterSpacing: '0.18em', textTransform: 'uppercase',
+            color: 'rgba(254,191,83,0.7)', textAlign: 'center',
+          }}>
+            ⚡ Season 2 — Coming Soon
+          </p>
+        </motion.div>
+
+        {/* Top 3 podium */}
+        <motion.div {...fadeUp(0.34)} className="w-full mb-8">
+          <p style={{
+            fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700,
+            fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginBottom: 16,
+          }}>
+            Top 3 Finalists
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 12 }}>
+            {/* 2nd — Hero */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
+                border: '2px solid #C0C0C0',
+                boxShadow: '0 0 16px rgba(192,192,192,0.3)',
+                marginBottom: 8,
+              }}>
+                <Image src="/images/GOTS/HERO.jpg" alt="Hero" width={72} height={72} className="object-cover w-full h-full" unoptimized />
+              </div>
+              <div style={{
+                fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem',
+                color: '#C0C0C0', marginBottom: 4,
+              }}>2</div>
+              <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '0.8rem', color: '#C0C0C0', letterSpacing: '0.06em', textAlign: 'center' }}>Hero</p>
+            </div>
+
+            {/* 1st — Deeply Dan */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+              <p style={{ fontSize: '1.4rem', marginBottom: 6 }}>👑</p>
+              <div style={{
+                width: 90, height: 90, borderRadius: '50%', overflow: 'hidden',
+                border: '3px solid #FEBF53',
+                boxShadow: '0 0 28px rgba(254,191,83,0.5)',
+                marginBottom: 8,
+              }}>
+                <Image src="/images/GOTS/DEEPLYDAN.jpg" alt="Deeply Dan" width={90} height={90} className="object-cover w-full h-full" unoptimized />
+              </div>
+              <div style={{
+                fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.8rem',
+                color: '#FEBF53', textShadow: '0 0 16px rgba(254,191,83,0.5)', marginBottom: 4,
+              }}>1</div>
+              <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '0.85rem', color: '#FEBF53', letterSpacing: '0.06em', textAlign: 'center' }}>Deeply Dan</p>
+            </div>
+
+            {/* 3rd — Street Brothers */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
+                border: '2px solid #CD7F32',
+                boxShadow: '0 0 16px rgba(205,127,50,0.3)',
+                marginBottom: 8,
+              }}>
+                <Image src="/images/GOTS/STREET BROTHERS.jpg" alt="Street Brothers" width={72} height={72} className="object-cover w-full h-full" unoptimized />
+              </div>
+              <div style={{
+                fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem',
+                color: '#CD7F32', marginBottom: 4,
+              }}>3</div>
+              <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '0.8rem', color: '#CD7F32', letterSpacing: '0.06em', textAlign: 'center' }}>Street Brothers</p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Gold divider */}
-        <motion.div {...fadeUp(0.24)} className="w-full mb-10"
+        <motion.div {...fadeUp(0.38)} className="w-full mb-10"
           style={{ height: 1, background: 'linear-gradient(to right, transparent 0%, rgba(254,191,83,0.25) 30%, rgba(254,191,83,0.25) 70%, transparent 100%)' }} />
 
-        {/* CTA buttons */}
-        <motion.div {...fadeUp(0.3)} className="flex flex-col sm:flex-row gap-3 w-full mb-12">
-          <Link href="/godw" className="flex-1">
+        {/* Final results link */}
+        <motion.div {...fadeUp(0.3)} className="w-full mb-10">
+          <Link href="/leaderboard">
             <button
               style={{
                 width: '100%',
@@ -122,122 +236,14 @@ export default function HomePage() {
                 boxShadow: '0 0 28px rgba(254,191,83,0.3)',
                 transition: 'all 200ms',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold-light)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(254,191,83,0.5)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(254,191,83,0.3)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 40px rgba(254,191,83,0.5)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 28px rgba(254,191,83,0.3)' }}
             >
-              Vote — GODW ●
+              View Final Results →
             </button>
-          </Link>
-
-          <Link href="/about" className="flex-1">
-            <button
-              style={{
-                width: '100%',
-                fontFamily: 'CogsAndBolts, Impact, sans-serif',
-                fontSize: '1rem',
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--gold)',
-                background: 'transparent',
-                border: '1px solid rgba(254,191,83,0.35)',
-                borderRadius: 10,
-                padding: '14px 0',
-                cursor: 'pointer',
-                transition: 'all 200ms',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'rgba(254,191,83,0.06)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(254,191,83,0.35)'; e.currentTarget.style.background = 'transparent' }}
-            >
-              About the Show
-            </button>
-          </Link>
-        </motion.div>
-
-        {/* Info cards */}
-        <motion.div {...fadeUp(0.38)} className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-
-          {/* GODW — live */}
-          <Link href="/godw">
-            <div
-              className="rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:border-[rgba(254,191,83,0.4)]"
-              style={{
-                background: 'rgba(254,191,83,0.06)',
-                border: '1px solid rgba(254,191,83,0.2)',
-              }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)' }}>
-                  God of the Week
-                </span>
-                <span style={{ fontSize: 9, color: 'var(--orange-red)' }}>●</span>
-              </div>
-              <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: '#ffffff', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 8 }}>
-               God of the week voting<br />Live now.
-              </p>
-              <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
-                Cast your vote for the week&apos;s best performer →
-              </p>
-            </div>
-          </Link>
-
-          {/* Evictions — live */}
-          <Link href="/leaderboard">
-            <div
-              className="rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:border-[rgba(213,66,30,0.5)]"
-              style={{
-                background: 'rgba(213,66,30,0.06)',
-                border: '1px solid rgba(213,66,30,0.2)',
-              }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <span style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#D5421E' }}>
-                  Evictions
-                </span>
-                <span style={{ fontSize: 9, color: 'var(--orange-red)' }}>●</span>
-              </div>
-              <p style={{ fontFamily: 'CogsAndBolts, Impact, sans-serif', fontSize: '1.4rem', color: '#ffffff', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 8 }}>
-                THE EVICTION SHOW
-              </p>
-              <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
-                Vote to save your contestant from eviction →
-              </p>
-            </div>
           </Link>
         </motion.div>
       </div>
-
-      {/* Leaderboard preview */}
-      {top3.length > 0 && (
-        <motion.div {...fadeUp(0.45)} className="relative z-10 w-full max-w-lg mx-auto px-4 mb-10">
-          <div style={{ position: 'relative' }}>
-            <EvictionChart contestants={top3} preview />
-
-            {/* Fade-out gradient mask */}
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0"
-              style={{ height: 80, background: 'linear-gradient(to top, #0a0a0a 0%, transparent 100%)' }}
-            />
-          </div>
-
-          <div className="flex justify-center mt-4">
-            <Link href="/leaderboard">
-              <button style={{
-                fontFamily: 'CogsAndBolts, Impact, sans-serif',
-                fontSize: '0.85rem',
-                letterSpacing: '0.12em',
-                color: '#FEBF53',
-                background: 'transparent',
-                border: '1px solid rgba(254,191,83,0.35)',
-                borderRadius: 8,
-                padding: '10px 24px',
-                cursor: 'pointer',
-              }}>
-                SEE FULL LEADERBOARD →
-              </button>
-            </Link>
-          </div>
-        </motion.div>
-      )}
 
       {/* Bottom wordmark */}
       <motion.footer {...fadeUp(0.5)} className="relative z-10 flex justify-center pb-6">

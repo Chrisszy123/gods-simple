@@ -6,10 +6,9 @@ import PusherClient from 'pusher-js'
 import confetti from 'canvas-confetti'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import CountdownTimer from '@/components/CountdownTimer'
 import VoteBadge from '@/components/VoteBadge'
 import { filterGodw, GODW_ACTIVE_THIS_WEEK, LAST_GODW_WINNER } from '@/lib/godw'
-import { isVotingOpen, VOTING_OPENS_AT, VOTING_CLOSES_AT } from '@/lib/voting-config'
+import { isVotingOpen, VOTING_OPENS_AT } from '@/lib/voting-config'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -336,47 +335,16 @@ export default function GodwPage() {
             transition={{ delay: 0.2 }}
             style={{
               fontFamily: 'Nexa, system-ui, sans-serif',
-              fontWeight: 400,
+              fontWeight: 700,
               fontSize: '0.75rem',
-              color: 'rgba(254,191,83,0.6)',
-              letterSpacing: '0.12em',
+              color: 'rgba(254,191,83,0.55)',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
               marginBottom: 16,
             }}
           >
-            Transfer ₦100 to vote · Wema Bank
+            🏆 Season 1 — Officially Closed
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            {!GODW_ACTIVE_THIS_WEEK ? (
-              <p style={{
-                fontFamily: 'Nexa, system-ui, sans-serif',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                color: 'rgba(254,191,83,0.55)',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-              }}>
-                No GODW vote this week
-              </p>
-            ) : new Date() < new Date(VOTING_OPENS_AT) ? (
-              <p style={{
-                fontFamily: 'Nexa, system-ui, sans-serif',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                color: 'rgba(254,191,83,0.55)',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-              }}>
-                Voting opens {new Date(VOTING_OPENS_AT).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-              </p>
-            ) : (
-              <CountdownTimer endsAt={VOTING_CLOSES_AT} onExpire={handleExpire} />
-            )}
-          </motion.div>
 
           <div className="mt-5 w-full"
             style={{ height: 1, background: 'linear-gradient(to right, transparent 0%, rgba(254,191,83,0.2) 30%, rgba(254,191,83,0.2) 70%, transparent 100%)' }} />
@@ -457,7 +425,7 @@ export default function GodwPage() {
             Gods of the Stage
           </p>
           <p style={{ fontFamily: 'Nexa, system-ui, sans-serif', fontWeight: 400, fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em' }}>
-            ₦100 per vote · Wema Bank transfer
+            Season 1 · Final Results
           </p>
         </footer>
       </div>
